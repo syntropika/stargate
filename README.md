@@ -28,7 +28,7 @@ git clone https://github.com/syntropika/stargate.git
 cd stargate
 ```
 
-You need Rust 1.88+ and a C/C++ build toolchain. For native bindings, install Python 3.10+ and the tools for your host language: Node.js 20+ or Go 1.22+ with cgo. Linux builds also need libclang development libraries.
+You need Rust 1.90+ and a C/C++ build toolchain. For native bindings, install Python 3.10+ and the tools for your host language: Node.js 20+ or Go 1.22+ with cgo. Linux builds also need libclang development libraries.
 
 ### Python / FastAPI
 
