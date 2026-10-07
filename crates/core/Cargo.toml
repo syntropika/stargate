@@ -16,7 +16,7 @@ sha2.workspace = true
 base64.workspace = true
 subtle.workspace = true
 zeroize.workspace = true
-openidconnect = "4.0.1"
+openidconnect = { version = "4.0.1", features = ["accept-rfc3339-timestamps"] }
 ipnet = { version = "2", features = ["serde"] }
 
 [lib]

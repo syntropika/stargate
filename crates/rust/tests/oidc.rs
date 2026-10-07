@@ -71,7 +71,7 @@ async fn token(
     assert_eq!(hash(&params["code_verifier"]), flow["code_challenge"]);
     assert_eq!(params["redirect_uri"], flow["redirect_uri"]);
     let mode = idp.mode.load(Ordering::Relaxed);
-    let claims = json!({"iss":if mode==1 {"https://wrong-issuer.example"} else {&idp.issuer},"sub":"subject-123","aud":if mode==2 {"wrong-audience"} else {"client"},"exp":if mode==3 {now()-60} else {now()+600},"iat":now(),"nonce":if mode==4 {"wrong-nonce"} else {&flow["nonce"]},"email":"person@example.com","email_verified":true});
+    let claims = json!({"iss":if mode==1 {"https://wrong-issuer.example"} else {&idp.issuer},"sub":"subject-123","aud":if mode==2 {"wrong-audience"} else {"client"},"exp":if mode==3 {now()-60} else {now()+600},"iat":now(),"nonce":if mode==4 {"wrong-nonce"} else {&flow["nonce"]},"email":"person@example.com","email_verified":true,"updated_at":if mode==6 {json!(now())} else if mode==7 {json!("not-a-timestamp")} else {json!("2026-10-07T12:00:00.000Z")}});
     let mut header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
     header.kid = Some("test-key".into());
     let key = if mode == 5 {
@@ -167,7 +167,7 @@ async fn oidc_pkce_browser_binding_replay_and_token_validation() {
         .redirect(reqwest::redirect::Policy::none())
         .build()
         .unwrap();
-    for mode in 0..=5 {
+    for mode in 0..=7 {
         idp.mode.store(mode, Ordering::Relaxed);
         let mut start = req("/auth/login");
         start.query = Some("return_to=/private".into());
@@ -195,7 +195,7 @@ async fn oidc_pkce_browser_binding_replay_and_token_validation() {
         );
         callback.headers = vec![("cookie".into(), browser)];
         let completed = response(auth.runtime.handle(callback.clone()).await);
-        if mode == 0 {
+        if mode == 0 || mode == 6 {
             assert_eq!(completed.status, 303);
             assert_eq!(location(&completed), "/private");
             let session = cookie(&completed, SESSION_COOKIE);

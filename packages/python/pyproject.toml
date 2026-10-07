@@ -3,7 +3,7 @@ requires = ["maturin>=1.7,<2"]
 build-backend = "maturin"
 [project]
 name = "syntropika-stargate"
-version = "0.2.0"
+version = "0.2.1"
 requires-python = ">=3.10"
 description = "Embedded Rust authentication for FastAPI and Starlette"
 license = { file = "LICENSE" }
