@@ -7,8 +7,17 @@ on:
         description: Publish packages after building and testing
         type: boolean
         default: false
+      source_ref:
+        description: Existing version tag to build (defaults to the workflow ref)
+        type: string
+        default: ''
+      registries:
+        description: Registries to publish; choose a subset when retrying a partial release
+        type: choice
+        options: [all, pypi, npm, crates.io, npm-and-crates.io]
+        default: all
       bootstrap:
-        description: Use temporary npm and crates.io secrets for the first publication
+        description: Use configured npm and crates.io token secrets instead of OIDC
         type: boolean
         default: false
 
@@ -28,6 +37,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -45,6 +56,7 @@ jobs:
       - name: Verify version and release ref
         env:
           PUBLISH: ${{ inputs.publish }}
+          SOURCE_REF: ${{ inputs.source_ref || github.ref }}
         run: |
           python - <<'PY'
           import json, os, pathlib, tomllib
@@ -52,7 +64,7 @@ jobs:
           assert json.loads(pathlib.Path('packages/node/package.json').read_text())['version'] == version
           assert tomllib.loads(pathlib.Path('packages/python/pyproject.toml').read_text())['project']['version'] == version
           if os.environ['PUBLISH'] == 'true':
-              assert os.environ['GITHUB_REF'] == 'refs/tags/v' + version, 'Publish from the matching version tag'
+              assert os.environ['SOURCE_REF'] in ('v' + version, 'refs/tags/v' + version), 'Publish from the matching version tag'
           PY
       - run: python -m venv .venv
       - run: PATH="$PWD/.venv/bin:$PATH" scripts/check.sh
@@ -75,6 +87,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
@@ -121,6 +135,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
       - uses: actions/setup-python@v5
@@ -145,7 +161,7 @@ jobs:
           if-no-files-found: error
 
   pypi-publish:
-    if: inputs.publish
+    if: inputs.publish && (inputs.registries == 'all' || inputs.registries == 'pypi')
     needs: [validate, node-build, python-build]
     runs-on: ubuntu-latest
     environment: pypi
@@ -160,7 +176,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
 
   npm-publish:
-    if: inputs.publish
+    if: inputs.publish && (inputs.registries == 'all' || inputs.registries == 'npm' || inputs.registries == 'npm-and-crates.io')
     needs: [validate, node-build, python-build]
     runs-on: ubuntu-latest
     environment: npm
@@ -169,6 +185,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -200,7 +218,7 @@ jobs:
           npm publish ./node/main --access public --provenance
 
   crates-publish:
-    if: inputs.publish
+    if: inputs.publish && (inputs.registries == 'all' || inputs.registries == 'crates.io' || inputs.registries == 'npm-and-crates.io')
     needs: [validate, node-build, python-build]
     runs-on: ubuntu-latest
     environment: crates-io
@@ -209,6 +227,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - run: python scripts/prepare-release.py --only rust --output "$RUNNER_TEMP/release"
