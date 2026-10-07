@@ -112,7 +112,7 @@ jobs:
           manylinux: '2_28'
           working-directory: packages/python
           args: --release --out dist
-      - run: python -m pip install dist/*.whl fastapi pytest httpx
+      - run: python -m pip install dist/*.whl fastapi pytest httpx cryptography PyJWT
         working-directory: packages/python
       - run: python -m pytest packages/python/tests
       - uses: actions/upload-artifact@v4
