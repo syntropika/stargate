@@ -6,6 +6,7 @@ use rand::Rng;
 use serde::de::DeserializeOwned;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Semaphore;
+mod accounts;
 
 pub struct TursoStore {
     database: Database,
@@ -75,13 +76,19 @@ impl TursoStore {
                 .ok_or(turso::Error::QueryReturnedNoRows)?
                 .get::<i64>(0)?;
             drop(rows);
-            if version > 1 {
+            if version > 2 {
                 return Ok(false);
             }
             if version == 0 {
                 conn.execute_batch(include_str!("migrations/0001.sql"))
                     .await?;
                 conn.execute("INSERT INTO schema_migrations VALUES (1)", ())
+                    .await?;
+            }
+            if version < 2 {
+                conn.execute_batch(include_str!("migrations/0002.sql"))
+                    .await?;
+                conn.execute("INSERT INTO schema_migrations VALUES (2)", ())
                     .await?;
             }
             Ok::<_, turso::Error>(true)
@@ -109,6 +116,17 @@ impl TursoStore {
     }
 
     async fn transaction(&self, statements: Vec<(String, Vec<Value>)>) -> Result<Vec<String>> {
+        Ok(self
+            .transaction_guarded(statements, None)
+            .await?
+            .unwrap_or_default())
+    }
+    // Roll back the entire operation when its permission or compare-and-swap statement returns no row.
+    async fn transaction_guarded(
+        &self,
+        statements: Vec<(String, Vec<Value>)>,
+        required_row: Option<usize>,
+    ) -> Result<Option<Vec<String>>> {
         let _permit = self
             .permits
             .acquire()
@@ -122,14 +140,20 @@ impl TursoStore {
             let result = async {
                 conn.execute("BEGIN CONCURRENT", ()).await?;
                 let mut out = Vec::new();
-                for (sql, values) in &statements {
+                for (index, (sql, values)) in statements.iter().enumerate() {
+                    let previous_rows = out.len();
                     let mut rows = conn.query(sql, values.clone()).await?;
                     while let Some(row) = rows.next().await? {
                         out.push(row.get::<String>(0)?);
                     }
+                    drop(rows);
+                    if required_row == Some(index) && out.len() == previous_rows {
+                        conn.execute("ROLLBACK", ()).await?;
+                        return Ok(None);
+                    }
                 }
                 conn.execute("COMMIT", ()).await?;
-                Ok::<_, turso::Error>(out)
+                Ok::<_, turso::Error>(Some(out))
             }
             .await;
             match result {
@@ -170,6 +194,16 @@ impl TursoStore {
         self.transaction(vec![(sql.into(), values)]).await?;
         Ok(())
     }
+    async fn create_credential(&self, sql: &str, values: Vec<Value>) -> Result<()> {
+        if self
+            .transaction(vec![accounts::account_lock(), (sql.into(), values)])
+            .await?
+            .is_empty()
+        {
+            return Err(StoreError::InvalidData);
+        }
+        Ok(())
+    }
 }
 fn now() -> i64 {
     std::time::SystemTime::now()
@@ -180,8 +214,66 @@ fn now() -> i64 {
 
 #[async_trait]
 impl AuthStore for TursoStore {
+    async fn prepare_local_accounts(&self, admin: Option<&str>) -> Result<()> {
+        self.prepare_accounts(admin).await
+    }
+    async fn local_setup_available(&self) -> Result<bool> {
+        self.setup_available().await
+    }
+    async fn find_local_credential(&self, email: &str) -> Result<Option<LocalCredential>> {
+        self.credential("email", email).await
+    }
+    async fn get_local_credential(&self, user: &str) -> Result<Option<LocalCredential>> {
+        self.credential("user_id", user).await
+    }
+    async fn create_local_session(&self, expected_hash: &str, session: &Session) -> Result<bool> {
+        Ok(!self.transaction(vec![accounts::account_lock(), (
+            "INSERT INTO sessions(id,user_id,token_hash,expires_at,data) SELECT ?1,?2,?3,?4,?5 WHERE EXISTS(SELECT 1 FROM local_credentials JOIN users ON users.id=local_credentials.user_id WHERE users.id=?2 AND users.disabled_at IS NULL AND password_hash=?6) RETURNING id".into(),
+            vec![text(&session.id),text(&session.user_id),text(&session.token_hash),Value::Integer(session.expires_at),text(encode(session)?),text(expected_hash)],
+        )]).await?.is_empty())
+    }
+    async fn create_local_user(
+        &self,
+        user: &User,
+        credential: &LocalCredential,
+        session: Option<&Session>,
+        actor: Option<&str>,
+    ) -> Result<Option<User>> {
+        self.insert_local_user(user, credential, session, actor)
+            .await
+    }
+    async fn list_users(&self, after: Option<&str>) -> Result<Vec<User>> {
+        self.query(
+            "SELECT data FROM users WHERE (?1 IS NULL OR id > ?1) ORDER BY id LIMIT 100",
+            vec![after.map(text).unwrap_or(Value::Null)],
+        )
+        .await
+    }
+    async fn update_user(
+        &self,
+        actor: &str,
+        id: &str,
+        role: UserRole,
+        disabled_at: Option<i64>,
+    ) -> Result<Option<User>> {
+        self.edit_user(actor, id, role, disabled_at).await
+    }
+    async fn revoke_user_access(&self, actor: &str, user: &str, now: i64) -> Result<bool> {
+        self.revoke_access(actor, user, now).await
+    }
+    async fn change_local_password(
+        &self,
+        user: &str,
+        expected_hash: &str,
+        replacement_hash: &str,
+        session: &Session,
+        now: i64,
+    ) -> Result<bool> {
+        self.replace_password(user, expected_hash, replacement_hash, session, now)
+            .await
+    }
     async fn resolve_identity(&self, identity: &ExternalIdentity, user: &User) -> Result<User> {
-        let rows = self.transaction(vec![
+        let rows = self.transaction(vec![accounts::account_lock(),
             ("INSERT INTO users(id,email,created_at,data) SELECT ?1,?2,?3,?4 WHERE NOT EXISTS(SELECT 1 FROM identities WHERE issuer=?5 AND subject=?6)".into(), vec![text(&user.id), identity.email.as_ref().map(text).unwrap_or(Value::Null),Value::Integer(user.created_at),text(encode(user)?),text(&identity.issuer),text(&identity.subject)]),
             ("INSERT INTO identities(id,user_id,issuer,subject,email,metadata,created_at) VALUES(?1,?2,?3,?4,?5,?6,?7) ON CONFLICT(issuer,subject) DO UPDATE SET email=excluded.email,metadata=excluded.metadata".into(),vec![text(&user.id),text(&user.id),text(&identity.issuer),text(&identity.subject),identity.email.as_ref().map(text).unwrap_or(Value::Null),text(encode(&identity.metadata)?),Value::Integer(user.created_at)]),
             ("UPDATE users SET email=?1,data=json_set(data,'$.email',?1) WHERE id=(SELECT user_id FROM identities WHERE issuer=?2 AND subject=?3)".into(),vec![identity.email.as_ref().map(text).unwrap_or(Value::Null),text(&identity.issuer),text(&identity.subject)]),
@@ -199,8 +291,8 @@ impl AuthStore for TursoStore {
             .pop())
     }
     async fn create_session(&self, s: &Session) -> Result<()> {
-        self.execute(
-            "INSERT INTO sessions(id,user_id,token_hash,expires_at,data) VALUES(?1,?2,?3,?4,?5)",
+        self.create_credential(
+            "INSERT INTO sessions(id,user_id,token_hash,expires_at,data) SELECT ?1,?2,?3,?4,?5 WHERE EXISTS(SELECT 1 FROM users WHERE id=?2 AND disabled_at IS NULL) RETURNING id",
             vec![
                 text(&s.id),
                 text(&s.user_id),
@@ -225,8 +317,8 @@ impl AuthStore for TursoStore {
         self.execute("UPDATE sessions SET revoked_at=?3,data=json_set(data,'$.revoked_at',?3) WHERE user_id=?1 AND (?2 IS NULL OR id=?2) AND revoked_at IS NULL",vec![text(user),id.map(text).unwrap_or(Value::Null),Value::Integer(now)]).await
     }
     async fn create_api_key(&self, k: &ApiKey) -> Result<()> {
-        self.execute(
-            "INSERT INTO api_keys(id,user_id,secret_hash,expires_at,data) VALUES(?1,?2,?3,?4,?5)",
+        self.create_credential(
+            "INSERT INTO api_keys(id,user_id,secret_hash,expires_at,data) SELECT ?1,?2,?3,?4,?5 WHERE EXISTS(SELECT 1 FROM users WHERE id=?2 AND disabled_at IS NULL) RETURNING id",
             vec![
                 text(&k.id),
                 text(&k.user_id),

@@ -7,6 +7,7 @@ export type Policy = {type:'anonymous'}|{type:'authenticated'}|{type:'scopes';sc
 export interface Config {
   baseUrl:string;storage:{type:'turso';path:string;connections?:number;retry_limit?:number};
   oidc?:{name?:string;issuer:string;clientId:string;clientSecret:string}|{name?:string;issuer:string;clientId:string;clientSecret:string}[];
+  local?:{login_attempts?:number;login_window_seconds?:number;initial_admin_user_id?:string|null}|null;
   pathPrefix?:string;maxBodyBytes?:number;maxHeaderBytes?:number;trustedProxies?:string[];allowInsecureLoopback?:boolean;
   session?:{ttl_seconds?:number;scopes?:string[]};branding?:{app_name?:string;logo?:string|null;accent?:string;stylesheet?:string|null};
 }

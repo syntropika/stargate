@@ -107,6 +107,8 @@ pub struct AuthConfig {
     #[serde(default)]
     pub oidc: Vec<OidcProviderConfig>,
     #[serde(default)]
+    pub local: Option<LocalConfig>,
+    #[serde(default)]
     pub session: SessionConfig,
     #[serde(default)]
     pub branding: BrandingConfig,
@@ -136,6 +138,7 @@ impl AuthConfig {
             storage,
             path_prefix: prefix(),
             oidc: Vec::new(),
+            local: None,
             session: SessionConfig::default(),
             branding: BrandingConfig::default(),
             max_body_bytes: body_limit(),
@@ -199,6 +202,20 @@ impl AuthConfig {
             }
         }
         validate_scopes(&self.session.scopes)?;
+        if let Some(local) = &self.local
+            && (local.login_attempts == 0
+                || local.login_attempts > 100
+                || local.login_window_seconds < 30
+                || local.login_window_seconds > 3600
+                || local.initial_admin_user_id.as_ref().is_some_and(|id| {
+                    id.len() != 43
+                        || !id
+                            .bytes()
+                            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+                }))
+        {
+            return Err(Error::Config);
+        }
         let mut names = std::collections::HashSet::new();
         for provider in &self.oidc {
             if provider.name.is_empty()
@@ -261,6 +278,24 @@ impl AuthConfig {
             return Err(Error::BadRequest);
         }
         Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct LocalConfig {
+    pub login_attempts: u32,
+    pub login_window_seconds: u32,
+    /// Explicitly initialize administration when enabling local accounts on an existing OIDC database.
+    pub initial_admin_user_id: Option<String>,
+}
+impl Default for LocalConfig {
+    fn default() -> Self {
+        Self {
+            login_attempts: 10,
+            login_window_seconds: 300,
+            initial_admin_user_id: None,
+        }
     }
 }
 pub fn validate_scopes(scopes: &[String]) -> Result<()> {

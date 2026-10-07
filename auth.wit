@@ -30,12 +30,14 @@ interface types {
     variant storage-config { turso(turso-config) }
     record oidc-provider-config { name: string, issuer: string, client-id: string, client-secret: string }
     record session-config { ttl-seconds: u32, scopes: list<string> }
+    record local-config { login-attempts: u32, login-window-seconds: u32, initial-admin-user-id: option<string> }
     record branding-config { app-name: string, logo: option<string>, accent: string }
     record config {
         base-url: string,
         path-prefix: string,
         storage: storage-config,
         oidc: list<oidc-provider-config>,
+        local: option<local-config>,
         session: session-config,
         branding: branding-config,
         max-body-bytes: u32,
@@ -43,7 +45,7 @@ interface types {
         trusted-proxies: list<string>,
         allow-insecure-loopback: bool,
     }
-    enum error { invalid-config, invalid-request, unauthorized, forbidden, unavailable }
+    enum error { invalid-config, invalid-request, unauthorized, forbidden, conflict, rate-limited, unavailable }
 }
 interface runtime {
     use types.{config, request, outcome, identity, policy, error};

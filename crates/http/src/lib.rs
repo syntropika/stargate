@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 use subtle::ConstantTimeEq;
+mod local;
 
 pub const SESSION_COOKIE: &str = "__Host-stargate-session";
 pub const OIDC_COOKIE: &str = "__Host-stargate-oidc";
@@ -170,16 +171,28 @@ impl Runtime {
                 Error::TooLarge => 413,
                 Error::Unauthorized => 401,
                 Error::Forbidden => 403,
+                Error::Conflict => 409,
+                Error::TooManyRequests => 429,
                 Error::Oidc => 502,
                 Error::Storage(_) => 503,
             };
-            AuthOutcome::Respond {
-                response: response(
-                    status,
-                    "application/json",
-                    serde_json::to_vec(&json!({"error":error.to_string()})).unwrap_or_default(),
-                ),
+            let mut response = response(
+                status,
+                "application/json",
+                serde_json::to_vec(&json!({"error":error.to_string()})).unwrap_or_default(),
+            );
+            if status == 429 {
+                response.headers.push((
+                    "retry-after".into(),
+                    self.auth
+                        .config
+                        .local
+                        .as_ref()
+                        .map_or(300, |c| c.login_window_seconds)
+                        .to_string(),
+                ));
             }
+            AuthOutcome::Respond { response }
         });
         if let AuthOutcome::Respond { response } = &mut outcome
             && is_head
@@ -199,6 +212,9 @@ impl Runtime {
         } else {
             ""
         };
+        if owned && let Some(outcome) = self.local_public(req, route).await? {
+            return Ok(outcome);
+        }
         if owned && (req.method == "GET" || req.method == "HEAD") {
             if route == "/assets/app.js" {
                 return Ok(respond(response(
@@ -223,7 +239,17 @@ impl Runtime {
                     ui::LOGO.as_bytes().to_vec(),
                 )));
             }
-            if ["", "/", "/profile", "/keys", "/sessions", "/logout"].contains(&route) {
+            if [
+                "",
+                "/",
+                "/profile",
+                "/keys",
+                "/sessions",
+                "/users",
+                "/logout",
+            ]
+            .contains(&route)
+            {
                 return Ok(respond(response(
                     200,
                     "text/html; charset=utf-8",
@@ -246,6 +272,7 @@ impl Runtime {
                             .map(|p| p.name.as_str())
                             .collect(),
                         route,
+                        local: self.auth.config.local.is_some(),
                     })
                     .into_bytes(),
                 )));
@@ -253,10 +280,13 @@ impl Runtime {
             if route == "/api/config" {
                 return Ok(json_response(
                     200,
-                    json!({"app_name":self.auth.config.branding.app_name,"providers":self.auth.config.oidc.iter().map(|p|&p.name).collect::<Vec<_>>()}),
+                    json!({"app_name":self.auth.config.branding.app_name,"providers":self.auth.config.oidc.iter().map(|p|&p.name).collect::<Vec<_>>(),"local":self.auth.config.local.is_some()}),
                 ));
             }
             if route == "/login" {
+                if self.auth.local_setup_available().await? {
+                    return Err(Error::Conflict);
+                }
                 let p = req.params()?;
                 let (location, browser) = self
                     .auth
@@ -273,6 +303,9 @@ impl Runtime {
                 return Ok(respond(r));
             }
             if route == "/callback" {
+                if self.auth.local_setup_available().await? {
+                    return Err(Error::Conflict);
+                }
                 let p = req.params()?;
                 let state = p.get("state").ok_or(Error::BadRequest)?;
                 let browser = req.cookie(OIDC_COOKIE)?.ok_or(Error::Unauthorized)?;
@@ -327,11 +360,18 @@ impl Runtime {
         if !matches!(req.method.as_str(), "GET" | "HEAD" | "OPTIONS") {
             self.csrf(req, &context)?;
         }
+        if let Some(outcome) = self.local_account(req, route, &context).await? {
+            return Ok(outcome);
+        }
         match (req.method.as_str(), route) {
-            ("GET" | "HEAD", "/api/me") => Ok(json_response(
-                200,
-                json!({"identity":context.identity,"csrf_token":context.csrf_token.as_ref().map(|s|s.expose()),"session_id":context.session_id}),
-            )),
+            ("GET" | "HEAD", "/api/me") => {
+                let local_password = self.auth.config.local.is_some()
+                    && self.auth.store.get_local_credential(user).await?.is_some();
+                Ok(json_response(
+                    200,
+                    json!({"identity":context.identity,"csrf_token":context.csrf_token.as_ref().map(|s|s.expose()),"session_id":context.session_id,"local_password":local_password}),
+                ))
+            }
             ("GET" | "HEAD", "/api/sessions") => {
                 let data=self.auth.store.list_sessions(user).await?.iter().map(|s|json!({"id":s.id,"created_at":s.created_at,"expires_at":s.expires_at,"last_used_at":s.last_used_at,"revoked_at":s.revoked_at})).collect::<Vec<_>>();
                 Ok(json_response(200, json!(data)))

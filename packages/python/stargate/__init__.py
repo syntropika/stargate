@@ -41,6 +41,16 @@ class OIDC:
 
 
 @dataclass(frozen=True)
+class Local:
+    login_attempts: int = 10
+    login_window_seconds: int = 300
+    initial_admin_user_id: str | None = None
+
+    def config(self):
+        return dict(vars(self))
+
+
+@dataclass(frozen=True)
 class Identity:
     subject: str
     user_id: str | None
@@ -55,7 +65,7 @@ class Identity:
 
 
 class Auth:
-    def __init__(self, *, base_url, storage, oidc=None, **options):
+    def __init__(self, *, base_url, storage, oidc=None, local=None, **options):
         configuration = {
             "base_url": base_url,
             "storage": storage.config(),
@@ -64,6 +74,7 @@ class Auth:
                 for p in (oidc if isinstance(oidc, list) else [oidc] if oidc else [])
             ],
             **options,
+            "local": local.config() if isinstance(local, Local) else local,
         }
         self._native = Native(json.dumps(configuration))
         self._prefix = configuration.get("path_prefix", "/auth")

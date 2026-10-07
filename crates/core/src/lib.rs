@@ -1,5 +1,6 @@
 //! Authentication and authorization logic, independent of HTTP frameworks and storage engines.
 pub mod config;
+mod local;
 mod oidc;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 pub use config::*;
@@ -23,6 +24,10 @@ pub enum Error {
     Unauthorized,
     #[error("permission denied")]
     Forbidden,
+    #[error("account operation conflicts with the current state")]
+    Conflict,
+    #[error("too many attempts; try again later")]
+    TooManyRequests,
     #[error("identity provider unavailable or invalid response")]
     Oidc,
     #[error(transparent)]
@@ -80,6 +85,7 @@ pub struct Auth {
     pub store: Arc<dyn AuthStore>,
     providers: Vec<oidc::Provider>,
     sink: Option<AuditSink>,
+    local: local::LocalRuntime,
 }
 impl Auth {
     pub async fn new(
@@ -89,11 +95,17 @@ impl Auth {
     ) -> Result<Self> {
         config.validate()?;
         let providers = oidc::discover(&config).await?;
+        if let Some(local) = &config.local {
+            store
+                .prepare_local_accounts(local.initial_admin_user_id.as_deref())
+                .await?;
+        }
         Ok(Self {
             config,
             store,
             providers,
             sink,
+            local: local::LocalRuntime::default(),
         })
     }
     pub async fn audit(&self, event: &str, actor: Option<&str>, metadata: Value) -> Result<()> {
@@ -162,6 +174,11 @@ impl Auth {
             .get_user(&user_id)
             .await?
             .ok_or(Error::Unauthorized)?;
+        if user.disabled_at.is_some() {
+            return Err(Error::Unauthorized);
+        }
+        let mut claims = BTreeMap::new();
+        claims.insert("stargate".into(), json!({"role":user.role}));
         Ok(Some(Authentication {
             identity: Identity {
                 subject: user.id.clone(),
@@ -169,13 +186,24 @@ impl Auth {
                 email: user.email,
                 auth_type,
                 scopes,
-                claims: BTreeMap::new(),
+                claims,
             },
             session_id,
             csrf_token,
         }))
     }
     pub async fn create_session(&self, user_id: &str) -> Result<(Session, Secret)> {
+        let (record, token) = self.session_record(user_id);
+        self.store.create_session(&record).await?;
+        self.audit(
+            "auth.session.created",
+            Some(user_id),
+            json!({"session_id":record.id}),
+        )
+        .await?;
+        Ok((record, token))
+    }
+    fn session_record(&self, user_id: &str) -> (Session, Secret) {
         let token = Secret::new(random_token());
         let record = Session {
             id: random_token(),
@@ -186,14 +214,7 @@ impl Auth {
             revoked_at: None,
             last_used_at: None,
         };
-        self.store.create_session(&record).await?;
-        self.audit(
-            "auth.session.created",
-            Some(user_id),
-            json!({"session_id":record.id}),
-        )
-        .await?;
-        Ok((record, token))
+        (record, token)
     }
     pub async fn create_api_key(
         &self,

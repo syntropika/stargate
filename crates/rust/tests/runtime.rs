@@ -16,6 +16,8 @@ async fn setup() -> (tempfile::TempDir, Stargate, User, String) {
     config.session.scopes = vec!["projects:read".into(), "projects:write".into()];
     let runtime = Stargate::new(config).await.unwrap();
     let user = User {
+        role: storage::UserRole::User,
+        disabled_at: None,
         id: random_token(),
         email: Some("person@example.com".into()),
         created_at: now(),
@@ -424,6 +426,8 @@ async fn transaction_is_bound_single_use_and_identity_resolution_is_atomic() {
     for _ in 0..50 {
         let store = runtime.runtime.auth.store.clone();
         let new_user = User {
+            role: storage::UserRole::User,
+            disabled_at: None,
             id: random_token(),
             email: user.email.clone(),
             created_at: now(),

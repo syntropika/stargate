@@ -10,12 +10,14 @@ pub struct Page<'a> {
     pub stylesheet: Option<&'a str>,
     pub providers: Vec<&'a str>,
     pub route: &'a str,
+    pub local: bool,
 }
 
 pub fn account_page(page: Page<'_>) -> String {
     let config = serde_json::json!({
         "prefix": page.prefix, "name": page.name, "logo": page.logo,
         "providers": page.providers, "page": page.route.trim_matches('/'),
+        "local": page.local,
     })
     .to_string()
     .replace('<', "\\u003c")
@@ -59,6 +61,7 @@ pub fn page_with_stylesheet(
         stylesheet,
         providers: vec![],
         route: "",
+        local: false,
     })
 }
 
@@ -99,6 +102,7 @@ mod tests {
             stylesheet: None,
             providers: vec!["team \"oidc\""],
             route: "/keys/",
+            local: false,
         });
         let marker = "<script id=\"stargate-config\" type=\"application/json\">";
         let config = html

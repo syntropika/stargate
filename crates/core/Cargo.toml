@@ -18,6 +18,7 @@ subtle.workspace = true
 zeroize.workspace = true
 openidconnect = { version = "4.0.1", features = ["accept-rfc3339-timestamps"] }
 ipnet = { version = "2", features = ["serde"] }
+argon2 = "0.5"
 
 [lib]
 name = "runtime_core"

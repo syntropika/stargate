@@ -156,9 +156,9 @@ def request(method, path, headers=None, body=None, query=None):
 
 def response(out, status):
     actual = out.get("response", {}).get("status", out.get("type"))
-    assert out["type"] == "respond" and out["response"]["status"] == status, (
-        f"expected HTTP {status}, received {actual}"
-    )
+    assert (
+        out["type"] == "respond" and out["response"]["status"] == status
+    ), f"expected HTTP {status}, received {actual}"
     return out["response"]
 
 
@@ -373,6 +373,197 @@ def suite(runner, issuer, path):
             )
 
 
+def local_suite(runner, issuer, path):
+    assert runner.call(
+        "create",
+        {
+            "base_url": "https://app.example.com",
+            "storage": {"type": "turso", "path": str(path)},
+            "oidc": [
+                {
+                    "name": "test",
+                    "issuer": issuer,
+                    "client_id": "client",
+                    "client_secret": "secret",
+                }
+            ],
+            "allow_insecure_loopback": True,
+            "local": {},
+        },
+    )["ready"]
+    response(runner.call("handle", request("GET", "/auth/login")), 409)
+    response(runner.call("handle", request("GET", "/auth/callback")), 409)
+    public = response(runner.call("handle", request("GET", "/auth/api/local")), 200)
+    status = payload(public)
+    assert status["enabled"] and status["setup_available"]
+    anonymous = [
+        ["cookie", header(public, "set-cookie").split(";")[0]],
+        ["origin", "https://app.example.com"],
+        ["x-stargate-csrf", status["csrf_token"]],
+        ["content-type", "application/json"],
+    ]
+    initial = {"email": "PERSON@example.com", "password": "initial password 123"}
+    response(
+        runner.call("handle", request("POST", "/auth/api/local/setup", body=initial)),
+        403,
+    )
+    setup = response(
+        runner.call(
+            "handle", request("POST", "/auth/api/local/setup", anonymous, initial)
+        ),
+        201,
+    )
+    admin = header(setup, "set-cookie").split(";")[0]
+    me = payload(
+        response(
+            runner.call("handle", request("GET", "/auth/api/me", [["cookie", admin]])),
+            200,
+        )
+    )
+    assert me["identity"]["claims"]["stargate"]["role"] == "administrator"
+    assert me["local_password"]
+    _, external = login(runner)
+    assert external["identity"]["email"] == me["identity"]["email"]
+    assert external["identity"]["user_id"] != me["identity"]["user_id"]
+    assert external["identity"]["claims"]["stargate"]["role"] == "user"
+    assert not external["local_password"]
+    assert not payload(
+        response(runner.call("handle", request("GET", "/auth/api/local")), 200)
+    )["setup_available"]
+    response(
+        runner.call(
+            "handle", request("POST", "/auth/api/local/setup", anonymous, initial)
+        ),
+        409,
+    )
+    csrf = [
+        ["cookie", admin],
+        ["origin", "https://app.example.com"],
+        ["x-stargate-csrf", me["csrf_token"]],
+        ["content-type", "application/json"],
+    ]
+    member_credentials = {
+        "email": "member@example.com",
+        "password": "member password 123",
+    }
+    member = payload(
+        response(
+            runner.call(
+                "handle", request("POST", "/auth/api/users", csrf, member_credentials)
+            ),
+            201,
+        )
+    )
+    listed = payload(
+        response(
+            runner.call(
+                "handle", request("GET", "/auth/api/users", [["cookie", admin]])
+            ),
+            200,
+        )
+    )
+    assert len(listed["users"]) == 3 and "password_hash" not in json.dumps(listed)
+    logged = response(
+        runner.call(
+            "handle",
+            request("POST", "/auth/api/local/login", anonymous, member_credentials),
+        ),
+        200,
+    )
+    session = header(logged, "set-cookie").split(";")[0]
+    response(
+        runner.call("handle", request("GET", "/auth/api/users", [["cookie", session]])),
+        403,
+    )
+    member_me = payload(
+        response(
+            runner.call(
+                "handle", request("GET", "/auth/api/me", [["cookie", session]])
+            ),
+            200,
+        )
+    )
+    member_csrf = [
+        ["cookie", session],
+        ["origin", "https://app.example.com"],
+        ["x-stargate-csrf", member_me["csrf_token"]],
+        ["content-type", "application/json"],
+    ]
+    changed = response(
+        runner.call(
+            "handle",
+            request(
+                "POST",
+                "/auth/api/local/password",
+                member_csrf,
+                {
+                    "current_password": member_credentials["password"],
+                    "new_password": "replacement password 456",
+                },
+            ),
+        ),
+        200,
+    )
+    replacement = header(changed, "set-cookie").split(";")[0]
+    response(
+        runner.call("handle", request("GET", "/auth/api/me", [["cookie", session]])),
+        401,
+    )
+    response(
+        runner.call(
+            "handle", request("GET", "/auth/api/me", [["cookie", replacement]])
+        ),
+        200,
+    )
+    response(
+        runner.call(
+            "handle",
+            request(
+                "PATCH",
+                "/auth/api/users/" + member["id"],
+                csrf,
+                {"role": "user", "disabled": True},
+            ),
+        ),
+        200,
+    )
+    response(
+        runner.call(
+            "handle", request("GET", "/auth/api/me", [["cookie", replacement]])
+        ),
+        401,
+    )
+    member_credentials["password"] = "replacement password 456"
+    response(
+        runner.call(
+            "handle",
+            request("POST", "/auth/api/local/login", anonymous, member_credentials),
+        ),
+        401,
+    )
+    response(
+        runner.call(
+            "handle",
+            request(
+                "DELETE",
+                "/auth/api/users/" + me["identity"]["user_id"] + "/access",
+                csrf,
+            ),
+        ),
+        204,
+    )
+    response(
+        runner.call("handle", request("GET", "/auth/api/me", [["cookie", admin]])), 401
+    )
+    for file in path.parent.glob("*"):
+        if file.is_file():
+            data = file.read_bytes()
+            assert (
+                b"initial password 123" not in data
+                and b"replacement password 456" not in data
+            )
+
+
 def main():
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Idp)
     server.issuer = f"http://127.0.0.1:{server.server_port}"
@@ -397,10 +588,11 @@ def main():
                 runner = Runner(command, cwd)
                 try:
                     suite(runner, server.issuer, Path(directory) / "stargate.db")
+                    local_suite(runner, server.issuer, Path(directory) / "local.db")
                 finally:
                     runner.close()
                 print(
-                    f"{name}: shared contract, OIDC, CSRF, sessions, keys, scopes, expiration and revocation passed",
+                    f"{name}: shared contract, OIDC, CSRF, sessions, keys, scopes, expiration, local setup, administration, password rotation and revocation passed",
                     flush=True,
                 )
     finally:

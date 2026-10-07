@@ -2,14 +2,15 @@
 
 **Authentication inside your app.**
 
-Embed OIDC sign-in, sessions, API keys and an account UI in your existing HTTP server. Stargate runs in the same process, keeps authentication logic in Rust and stores state in an embedded Turso database. Your application owns the server, TLS and configuration.
+Embed email/password and OIDC sign-in, sessions, API keys and an account UI in your existing HTTP server. Stargate runs in the same process, keeps authentication logic in Rust and stores state in an embedded Turso database. Your application owns the server, TLS and configuration.
 
 Use it with Rust / Axum, Python / FastAPI or Starlette, Node / Express, and Go / net/http.
 
 ## How it works
 
-Mount Stargate in your application, pass your identity provider settings and protect the routes that need authentication. Users sign in through your OIDC provider and manage their profile, API keys and sessions at `/auth/`.
+Mount Stargate in your application, choose local accounts, OIDC, or both, and protect the routes that need authentication. Users sign in and manage their profile, API keys and sessions at `/auth/`. With local accounts enabled on a fresh database, the first completed signup becomes the administrator; they can manage users in the same panel.
 
+- **Local accounts:** email/password, first-run administrator setup and user management.
 - **OIDC sign-in:** authorization code flow with PKCE, state and nonce validation.
 - **Sessions:** opaque cookies, expiration and revocation.
 - **API keys:** scoped credentials, shown once and stored as hashes.
@@ -99,7 +100,7 @@ The [integration guide](docs/integrations.md) includes build commands and usage 
 
 ## Scope and security
 
-v0.1 targets one process with one embedded database and an external OIDC identity provider. It includes session and API key management, scope checks and the account UI. Password authentication, MFA, organizations, distributed sessions and additional database engines are future work.
+Stargate targets one process with one embedded database. Configure local accounts, an external OIDC identity provider, or both. It includes administrator user management, session and API key management, scope checks and the account UI. Email verification, invitations, password recovery, MFA, organizations, distributed sessions and additional database engines are future work.
 
 The host explicitly grants session scopes; API keys can request only a subset of those grants. Account mutations require a browser session and CSRF protection. The host supplies TLS, secrets and trusted proxy settings. See [configuration and security](docs/configuration.md) for defaults and constraints.
 
@@ -129,6 +130,7 @@ Maintainers can follow the [publishing guide](docs/publishing.md) for registry r
 
 - [Installation and supported platforms](docs/installation.md)
 - [Build and integrate each language](docs/integrations.md)
+- [Local accounts and administrators](docs/local-accounts.md)
 - [Configuration and security behavior](docs/configuration.md)
 - [Architecture and workspace boundaries](docs/architecture.md)
 - [Shared runtime contract](auth.wit)

@@ -137,28 +137,38 @@ mux.Handle("/private", auth.Require(privateHandler))
 
 `Require` authenticates requests when used directly. For optional identity on all application routes, wrap the mux with `auth.Middleware(mux)`. Read identity through `stargate.IdentityFromContext`. The Go package is source-based and links to the Rust library; it does not reimplement authentication.
 
+## Local accounts
+
+OIDC is optional. Enable email/password with `local=Local()` in Python, `local: {}` in Node, `config.local = Some(LocalConfig::default())` in Rust, or `Local: &stargate.LocalConfig{}` in Go. Keep OIDC configured to offer both methods. See [local accounts and administrators](local-accounts.md) for complete examples and the initial administrator flow.
+
 ## Account routes
 
 The default prefix is `/auth`; configure `path_prefix` (`pathPrefix` in Node) to change it.
 
 | Route | Behavior |
 | --- | --- |
-| `GET /auth/`, `/profile`, `/keys`, `/sessions` | Embedded account UI |
+| `GET /auth/`, `/profile`, `/keys`, `/sessions`, `/users` | Embedded account UI |
 | `GET /auth/login` | Start OIDC with PKCE, state, nonce and a browser-binding cookie |
 | `GET /auth/callback` | Validate the provider response, create a session and redirect |
 | `GET /auth/logout` | Open the account UI with a sign-out action |
 | `POST /auth/logout` | Revoke the current session and clear its cookie |
 | `GET /auth/api/config` | Public branding/provider names |
-| `GET /auth/api/me` | Identity, current session ID and CSRF token |
+| `GET /auth/api/local` | Public local setup status and CSRF token |
+| `POST /auth/api/local/setup`, `/auth/api/local/login` | First administrator setup or password sign-in |
+| `POST /auth/api/local/password` | Change password and rotate the session |
+| `GET, POST /auth/api/users` | Administrator user listing and local account creation |
+| `PATCH /auth/api/users/{id}` | Administrator role and account status changes |
+| `DELETE /auth/api/users/{id}/access` | Administrator revocation of all user credentials |
+| `GET /auth/api/me` | Identity, current session ID, local-password availability and CSRF token |
 | `GET, POST /auth/api/keys` | List or create keys |
 | `DELETE /auth/api/keys/{id}` | Revoke an owned key |
 | `GET /auth/api/sessions` | List owned sessions |
 | `DELETE /auth/api/sessions/{id}` | Revoke an owned session |
 | `DELETE /auth/api/sessions` | Revoke every session, including the current one |
 
-Mutations require a session, an `Origin` matching the configured base URL and `X-Stargate-CSRF` from `/auth/api/me`. The embedded UI supplies these automatically. API key credentials cannot manage keys or sessions. Key creation returns a full `ak_live_` secret once; subsequent lists contain only metadata. Send the secret as `Authorization: Bearer ak_live_...` to application routes.
+Authenticated mutations require a session, an `Origin` matching the configured base URL and `X-Stargate-CSRF` from `/auth/api/me`. The embedded UI supplies these automatically. API key credentials cannot manage keys or sessions. Key creation returns a full `ak_live_` secret once; subsequent lists contain only metadata. Send the secret as `Authorization: Bearer ak_live_...` to application routes.
 
-`session.scopes` explicitly grants the scopes assigned to every OIDC session in this runtime. The default is empty. Keys can request only a subset of the owner's session scopes. These are host-level grants, not permissions inferred from an email address or provider role claim.
+`session.scopes` explicitly grants the scopes assigned to every session in this runtime. The default is empty. Keys can request only a subset of the owner's session scopes. These are host-level grants, not permissions inferred from an email address or provider role claim.
 
 ## Build and verification
 

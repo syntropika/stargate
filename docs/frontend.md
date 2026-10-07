@@ -31,7 +31,7 @@ are produced by Vite and are outside the formatter and linter targets.
 
 `npm run dev` starts Vite for layout development. Its `index.html` supplies a
 development configuration; it does not provide authentication or a mock API.
-Use a host application running Stargate to exercise real sign-in, keys and
+Use a host application running Stargate to exercise real sign-in, administrator setup, users, password changes, keys and
 sessions after rebuilding the assets.
 
 Rust serves an HTML shell with public configuration (path prefix, app name, logo,
@@ -43,10 +43,12 @@ under the existing Content Security Policy.
 
 ## Layout and branding
 
-Authenticated views share horizontal navigation on desktop and mobile. Profile, API keys and sessions remain distinct views. The key inventory precedes the creation form; the one-time secret appears inline
+Authenticated views share horizontal navigation on desktop and mobile. Profile, API keys, sessions and administrator Users remain distinct views. The key inventory precedes the creation form; the one-time secret appears inline
 after creation. Mobile registers reflow into labeled records. Lists show explicit
-loading, error and empty states. Unauthenticated visitors see configured sign-in
-providers without account navigation.
+loading, error and empty states. Unauthenticated visitors see enabled local sign-in and configured OIDC
+providers without account navigation. A fresh local installation shows the
+administrator setup form first. `local-access.tsx` owns sign-in and password
+forms; `user-management.tsx` owns the administrator view.
 
 `panel.css` imports Tailwind and defines scoped panel components and semantic
 color/spacing variables. Preserve `--accent` and the supported element IDs when

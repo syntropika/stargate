@@ -8,8 +8,12 @@ All values are passed to the constructor. The library does not read environment 
 | `storage` | Required | `TursoConfig` with an explicit file path |
 | `path_prefix` | `/auth` | Absolute, non-root, segment-based path without a trailing slash |
 | `oidc` | Empty | Named providers, exact issuer string, client ID and client secret |
+| `local` | None | Set `{}` to enable local email/password accounts |
+| `local.login_attempts` | 10 | Between 1 and 100; successful attempts also count |
+| `local.login_window_seconds` | 300 | Between 30 and 3600 seconds |
+| `local.initial_admin_user_id` | None | Existing active user ID, required only when enabling on an existing database |
 | `session.ttl_seconds` | 86400 | Between 1 second and 1 year |
-| `session.scopes` | Empty | Explicit host grants assigned to OIDC sessions |
+| `session.scopes` | Empty | Explicit host grants assigned to all sessions |
 | `branding.app_name` | `Stargate` | Nonempty, at most 128 bytes, no control characters |
 | `branding.logo` | None | HTTPS URL; rendered with escaped attributes |
 | `branding.accent` | `#c4a882` | Six-digit hexadecimal color |
@@ -37,11 +41,15 @@ Login uses PKCE S256, unpredictable state and nonce, a ten-minute stored transac
 
 `return_to` accepts local absolute paths, optionally with a query. It rejects network-path references, remote URLs, fragments, whitespace, backslashes, non-ASCII input and percent escapes. This deliberately conservative v0.1 rule prevents ambiguous redirect interpretation. Callers can use ordinary ASCII paths such as `/projects?tab=active`.
 
+## Local accounts
+
+Set `local` to an object to enable email/password sign-in and administrator management. OIDC can be enabled alongside it. On a fresh database, the first completed signup becomes the administrator and closes setup permanently. Existing user databases require an explicit initial administrator ID. See [local accounts](local-accounts.md) for setup, migration, limits and HTTP endpoints.
+
 ## Cookies and CSRF
 
-Session and OIDC binding cookies use `__Host-` names, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/` and a bounded `Max-Age`. All cookies remain Secure in development. Sessions and keys use 256 bits of CSPRNG entropy; storage retains SHA-256 hashes of these high-entropy secrets. Human passwords are outside v0.1.
+Session and OIDC binding cookies use `__Host-` names, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/` and a bounded `Max-Age`. All cookies remain Secure in development. Sessions and keys use 256 bits of CSPRNG entropy; storage retains SHA-256 hashes of these high-entropy secrets. Local passwords use salted Argon2id, separately from high-entropy token hashing.
 
-Account API mutations and logout require a session, an exact origin match and a constant-time comparison of `X-Stargate-CSRF`. The CSRF token is domain-separated from the opaque session token and returned through `/auth/api/me`. Neither a key nor its scopes grant access to account-management operations. GET logout only opens the UI; sign-out is a protected POST.
+Authenticated account API mutations and logout require a session, an exact origin match and a constant-time comparison of `X-Stargate-CSRF`. The CSRF token is domain-separated from the opaque session token and returned through `/auth/api/me`. Neither a key nor its scopes grant access to account-management operations. GET logout only opens the UI; sign-out is a protected POST. Local setup and login use a separate secure HttpOnly CSRF cookie and the token from `/auth/api/local`, with the same exact-origin requirement.
 
 ## HTTP and proxies
 
@@ -55,4 +63,4 @@ Account responses include `no-store`, a restrictive Content Security Policy, `no
 
 Use one shared runtime/store per embedded database file in a process. The runtime migrates the schema before serving requests. Audit failures and exhausted storage retries fail closed with service-unavailable responses; underlying database and provider details are not exposed to clients. Session revocation checks apply when a request authenticates, rather than retroactively interrupting handlers already executing.
 
-Rust hosts can pass an audit sink to `Stargate::with_audit`. Other bindings receive the same persisted events in Turso; host callback registration for those languages is a future extension. Hosts remain responsible for TLS, secret provisioning, application request limits, deployment permissions and their own logging. Never log the supplied config, Authorization/Cookie headers or key-creation responses.
+Rust hosts can pass an audit sink to `Stargate::with_audit`. Other bindings receive the same persisted events in Turso; host callback registration for those languages is a future extension. Hosts remain responsible for TLS, secret provisioning, application request limits, deployment permissions and their own logging. Never log the supplied config, Authorization/Cookie headers, login or password request bodies, or key-creation responses.
