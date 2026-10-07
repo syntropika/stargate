@@ -36,7 +36,7 @@ cargo add syntropika-stargate --rename stargate
 
 Python's import remains `stargate`; the Rust command also makes the import `stargate`. npm selects an optional native binary automatically. Prebuilt Node and Python packages target Linux x64, macOS arm64 and Windows x64. Rust applications compile the runtime from source. Go integration is available from this repository and links to the Rust C ABI.
 
-See [integration guides](docs/integrations.md) for configuration and [publishing](docs/publishing.md) for platform requirements and the GitHub Actions release workflow.
+See [installation](docs/installation.md) for platform requirements and the [integration guide](docs/integrations.md) for configuration and usage.
 
 ## Build from source
 
@@ -113,12 +113,22 @@ scripts/check.sh
 
 This builds the native bindings and runs formatting, Clippy, Rust tests, storage migrations, concurrency checks, a mock OIDC flow, shared conformance tests across all four languages, framework integration tests and TypeScript declaration checks. Test databases use the system temporary directory; set `TMPDIR` to choose another location.
 
+The account panel uses React, TypeScript and Tailwind, built with Vite. Its compiled
+JavaScript and CSS are checked in and embedded by the `ui` crate. Installing or
+running Stargate does not require Node.js or a separate frontend server. See the
+[frontend development guide](docs/frontend.md) for build and preview commands.
+
 The workspace contains `core`, `http`, `storage`, `ui`, `rust`, `python`, `node` and `go`. Database adapters live inside `storage`, with optional Cargo features. Turso is enabled by the Rust host integration.
+
+The public landing and documentation site are built from `website/`. See the
+[website development guide](website/README.md) for local development and the
+Cloudflare Workers pipeline.
+Maintainers can follow the [publishing guide](docs/publishing.md) for registry releases and Trusted Publishing setup.
 
 ## Documentation
 
+- [Installation and supported platforms](docs/installation.md)
 - [Build and integrate each language](docs/integrations.md)
-- [Package names and Trusted Publishing setup](docs/publishing.md)
 - [Configuration and security behavior](docs/configuration.md)
 - [Architecture and workspace boundaries](docs/architecture.md)
 - [Shared runtime contract](auth.wit)

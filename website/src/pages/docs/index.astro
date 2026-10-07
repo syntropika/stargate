@@ -1,0 +1,23 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+<DocsLayout title="Getting started" description="Install Stargate and embed authentication in your existing Rust, Node, Python or Go application.">
+  <h1>Authentication inside your app.</h1>
+  <p class="doc-lead">Stargate embeds OIDC sign-in, sessions, API keys and an account panel in your existing HTTP server. The authentication runtime is written in Rust and shared across language integrations.</p>
+  <h2>Choose your integration</h2>
+  <p>Install the package for your host language:</p>
+  <h3>Node / Express</h3>
+  <pre><code>npm install @syntropika/stargate express</code></pre>
+  <h3>Python / FastAPI</h3>
+  <pre><code>python -m pip install syntropika-stargate fastapi</code></pre>
+  <h3>Rust / Axum</h3>
+  <pre><code>cargo add syntropika-stargate --rename stargate</code></pre>
+  <p>Go integration is available from the repository and links to the Rust C ABI. See <a href="/docs/integrations/#go--nethttp">the Go integration guide</a>.</p>
+  <h2>Mount the runtime</h2>
+  <p>Provide the public HTTPS origin, embedded Turso database and your OIDC provider configuration. Register <code>https://app.example.com/auth/callback</code> with the provider, mount Stargate, then protect the routes that require an identity or scopes.</p>
+  <p>The account panel is served under <code>/auth/</code>. Your application supplies the HTTP server, TLS and configuration; Stargate does not discover configuration files or environment variables.</p>
+  <p><a class="text-link" href="/docs/integrations/">Read the integration examples →</a></p>
+  <h2>Understand the current scope</h2>
+  <p>Stargate currently targets one process, one embedded database and an external OIDC identity provider. Password sign-up, administrator management, MFA and distributed sessions are future work.</p>
+  <p>Read <a href="/docs/configuration/">configuration and security</a> before shipping an integration. All cookies use <code>Secure</code>, and browser account mutations require session authentication and CSRF protection.</p>
+</DocsLayout>
