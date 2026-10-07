@@ -1,9 +1,12 @@
 # Website deployment
 
 The public website is a static Astro application in `website/`. It presents
-Stargate and renders the repository's Markdown guides under `/docs/`. The guides
-in this directory are the source of truth; edit them rather than duplicating
-content in the website. Relative guide links are rewritten during the site build.
+Stargate and renders selected repository Markdown guides under `/docs/`.
+Consumer guides in `docs/` are the source of truth; edit them rather than
+duplicating content in the website. `src/lib/guides.ts` explicitly selects which
+guides are published and supplies their navigation labels. Maintainer guides,
+including this file, are excluded from the public routes and sitemap. Relative
+guide links are rewritten during the site build.
 
 The landing page includes language-specific installation commands, a keyboard
 accessible language selector and copy controls. Go links to its source-build
@@ -49,10 +52,10 @@ publishing runs independently.
 
 Configure these repository values in GitHub Settings → Secrets and variables → Actions:
 
-| Kind | Name | Purpose |
-| --- | --- | --- |
-| Secret | `CLOUDFLARE_API_TOKEN` | A Cloudflare API token allowed to deploy Workers and manage the custom domain |
-| Variable | `CLOUDFLARE_ACCOUNT_ID` | The account that owns the Worker and domain zone |
+| Kind     | Name                    | Purpose                                                                       |
+| -------- | ----------------------- | ----------------------------------------------------------------------------- |
+| Secret   | `CLOUDFLARE_API_TOKEN`  | A Cloudflare API token allowed to deploy Workers and manage the custom domain |
+| Variable | `CLOUDFLARE_ACCOUNT_ID` | The account that owns the Worker and domain zone                              |
 
 Use a token scoped to the deployment account and the domain zone, with Account
 Workers Scripts Edit, Account Workers Routes Edit and Zone Read permissions as
