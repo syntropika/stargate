@@ -1,0 +1,18 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+[project]
+name = "syntropika-stargate"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "Embedded Rust authentication for FastAPI and Starlette"
+license = { file = "LICENSE" }
+readme = "README.md"
+dependencies = ["starlette>=0.37"]
+[project.urls]
+Repository = "https://github.com/syntropika/stargate"
+Documentation = "https://github.com/syntropika/stargate#readme"
+[tool.maturin]
+manifest-path = "../../crates/python/Cargo.toml"
+python-source = "."
+module-name = "stargate._native"

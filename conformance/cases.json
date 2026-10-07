@@ -1,0 +1,8 @@
+[
+  {"name":"anonymous application request","operation":"handle","input":{"method":"GET","path":"/private"},"expected":{"type":"continue","identity":null}},
+  {"name":"embedded account page","operation":"handle","input":{"method":"GET","path":"/auth/"},"expected":{"type":"respond","status":200}},
+  {"name":"prefix boundary","operation":"handle","input":{"method":"GET","path":"/authentication"},"expected":{"type":"continue","identity":null}},
+  {"name":"invalid bearer","operation":"handle","input":{"method":"GET","path":"/private","headers":[["authorization","Bearer invalid"]]},"expected":{"type":"respond","status":401}},
+  {"name":"anonymous access denied","operation":"authorize","input":{"identity":null,"policy":{"type":"authenticated"}},"expected":{"allowed":false,"status":401}},
+  {"name":"anonymous policy","operation":"authorize","input":{"identity":null,"policy":{"type":"anonymous"}},"expected":{"allowed":true,"status":200}}
+]

@@ -1,0 +1,38 @@
+{
+  "name": "@syntropika/stargate",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syntropika/stargate.git",
+    "directory": "packages/node"
+  },
+  "publishConfig": {"access": "public"},
+  "optionalDependencies": {
+    "@syntropika/stargate-linux-x64-gnu": "0.1.0",
+    "@syntropika/stargate-darwin-arm64": "0.1.0"
+  },
+  "description": "Embedded Rust authentication for Express",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "native.js"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "express": ">=4"
+  },
+  "scripts": {
+    "test": "node --test test.js",
+    "types": "tsc --noEmit --strict --moduleResolution node --target es2022 index.d.ts"
+  },
+  "devDependencies": {
+    "express": "^5.1.0",
+    "@types/express": "^5.0.0",
+    "typescript": "^5.9.0"
+  }
+}

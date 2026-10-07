@@ -1,0 +1,30 @@
+[package]
+name = "rust"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+runtime-core.workspace = true
+runtime-http.workspace = true
+storage = { workspace = true, features = ["turso"] }
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+axum = "0.8"
+tower = "0.5"
+[dev-dependencies]
+url.workspace = true
+tempfile = "3"
+wit-parser = "0.261"
+reqwest = { version = "0.12", features = ["json"] }
+jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+rsa = { version = "0.9", features = ["pem"] }
+rand.workspace = true
+base64.workspace = true
+sha2.workspace = true
+[[example]]
+name = "axum"
+path = "../../examples/axum.rs"
+[[example]]
+name = "conformance"
+path = "../../conformance/rust.rs"

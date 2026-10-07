@@ -1,0 +1,56 @@
+package stargate:runtime@0.1.0;
+
+/// Canonical native runtime contract. WIT does not mandate a WebAssembly execution model.
+interface types {
+    record header { name: string, value: string }
+    record request {
+        method: string,
+        path: string,
+        query: option<string>,
+        headers: list<header>,
+        body: list<u8>,
+        peer-ip: option<string>,
+    }
+    record response { status: u16, headers: list<header>, body: list<u8> }
+    enum auth-type { session, api-key, bearer-jwt }
+    /// Each claim value is a JSON value encoded as UTF-8 text.
+    record claim { name: string, value-json: string }
+    record identity {
+        subject: string,
+        user-id: option<string>,
+        email: option<string>,
+        auth-type: auth-type,
+        scopes: list<string>,
+        claims: list<claim>,
+    }
+    record continuation { identity: option<identity>, response-headers: list<header> }
+    variant outcome { respond(response), continue(continuation) }
+    variant policy { anonymous, authenticated, scopes(list<string>) }
+    record turso-config { path: string, connections: u32, retry-limit: u32 }
+    variant storage-config { turso(turso-config) }
+    record oidc-provider-config { name: string, issuer: string, client-id: string, client-secret: string }
+    record session-config { ttl-seconds: u32, scopes: list<string> }
+    record branding-config { app-name: string, logo: option<string>, accent: string }
+    record config {
+        base-url: string,
+        path-prefix: string,
+        storage: storage-config,
+        oidc: list<oidc-provider-config>,
+        session: session-config,
+        branding: branding-config,
+        max-body-bytes: u32,
+        max-header-bytes: u32,
+        trusted-proxies: list<string>,
+        allow-insecure-loopback: bool,
+    }
+    enum error { invalid-config, invalid-request, unauthorized, forbidden, unavailable }
+}
+interface runtime {
+    use types.{config, request, outcome, identity, policy, error};
+    resource instance {
+        handle: func(req: request) -> result<outcome, error>;
+        authorize: func(user: option<identity>, requirement: policy) -> result<_, error>;
+    }
+    create: func(configuration: config) -> result<instance, error>;
+}
+world embedded-runtime { export runtime; }

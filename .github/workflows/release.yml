@@ -1,0 +1,198 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish packages after building and testing
+        type: boolean
+        default: false
+      bootstrap:
+        description: Use temporary npm and crates.io secrets for the first publication
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
+      - name: Verify version and release ref
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, tomllib
+          version = tomllib.loads(pathlib.Path('Cargo.toml').read_text())['workspace']['package']['version']
+          assert json.loads(pathlib.Path('packages/node/package.json').read_text())['version'] == version
+          assert tomllib.loads(pathlib.Path('packages/python/pyproject.toml').read_text())['project']['version'] == version
+          if os.environ['PUBLISH'] == 'true':
+              assert os.environ['GITHUB_REF'] == 'refs/tags/v' + version, 'Publish from the matching version tag'
+          PY
+      - run: python3 -m venv .venv
+      - run: PATH="$PWD/.venv/bin:$PATH" scripts/check.sh
+      - name: Validate staged Rust workspace
+        run: |
+          python3 scripts/prepare-release.py --only rust --output "$RUNNER_TEMP/release"
+          cargo check --workspace --manifest-path "$RUNNER_TEMP/release/rust/Cargo.toml"
+
+  node-build:
+    needs: validate
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux-x64-gnu
+          - os: macos-14
+            target: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev
+      - run: python3 scripts/build-bindings.py --release
+      - run: npm install --no-package-lock --no-audit --no-fund && npm test && npm run types
+        working-directory: packages/node
+      - name: Stage npm packages
+        run: python3 scripts/prepare-release.py --only node --output "$RUNNER_TEMP/release"
+      - name: Test installed npm tarballs
+        run: python3 scripts/check-node-package.py --packages "$RUNNER_TEMP/release/node"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: node-${{ matrix.target }}
+          path: ${{ runner.temp }}/release/node/
+          if-no-files-found: error
+
+  python-build:
+    needs: validate
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64
+          - os: macos-14
+            target: aarch64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: PyO3/maturin-action@v1
+        with:
+          maturin-version: 'v1.12.6'
+          target: ${{ matrix.target }}
+          manylinux: '2_28'
+          working-directory: packages/python
+          args: --release --out dist
+      - run: python -m pip install dist/*.whl fastapi pytest httpx
+        working-directory: packages/python
+      - run: python -m pytest packages/python/tests
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-${{ matrix.target }}
+          path: packages/python/dist/*.whl
+          if-no-files-found: error
+
+  pypi-publish:
+    if: inputs.publish
+    needs: [node-build, python-build]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: python-*
+          merge-multiple: true
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  npm-publish:
+    if: inputs.publish
+    needs: [node-build, python-build]
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --global npm@11
+      - uses: actions/download-artifact@v4
+        with:
+          name: node-linux-x64-gnu
+          path: node
+      - uses: actions/download-artifact@v4
+        with:
+          name: node-darwin-arm64
+          path: node
+      - name: Configure first-publication authentication
+        if: inputs.bootstrap
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          test -n "$NPM_TOKEN"
+          printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
+      - name: Publish native packages, then the public wrapper
+        run: |
+          npm publish ./node/linux-x64-gnu --access public --provenance
+          npm publish ./node/darwin-arm64 --access public --provenance
+          npm publish ./node/main --access public --provenance
+
+  crates-publish:
+    if: inputs.publish
+    needs: [node-build, python-build]
+    runs-on: ubuntu-latest
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
+      - run: python3 scripts/prepare-release.py --only rust --output "$RUNNER_TEMP/release"
+      - uses: rust-lang/crates-io-auth-action@v1
+        if: ${{ !inputs.bootstrap }}
+        id: auth
+      - name: Publish crates in dependency order
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ inputs.bootstrap && secrets.CARGO_REGISTRY_TOKEN || steps.auth.outputs.token }}
+        run: |
+          test -n "$CARGO_REGISTRY_TOKEN"
+          cd "$RUNNER_TEMP/release/rust"
+          for package in syntropika-stargate-ui syntropika-stargate-storage syntropika-stargate-core syntropika-stargate-http syntropika-stargate; do
+            cargo publish --package "$package" --allow-dirty
+          done
