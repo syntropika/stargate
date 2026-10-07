@@ -81,6 +81,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: native-${{ matrix.target }}
+          cache-on-failure: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -89,7 +90,11 @@ jobs:
           node-version: '24'
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libclang-dev
-      - run: python scripts/build-bindings.py --release
+      - run: python scripts/build-bindings.py --release --node-only
+        if: runner.os != 'Windows'
+      - run: python scripts/build-bindings.py --release --node-only
+        if: runner.os == 'Windows'
+        shell: pwsh
       - run: npm install --no-package-lock --no-audit --no-fund && npm test && npm run types
         working-directory: packages/node
       - name: Stage npm packages
