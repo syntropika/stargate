@@ -155,8 +155,9 @@ def request(method, path, headers=None, body=None, query=None):
 
 
 def response(out, status):
+    actual = out.get("response", {}).get("status", out.get("type"))
     assert out["type"] == "respond" and out["response"]["status"] == status, (
-        f"expected HTTP {status}"
+        f"expected HTTP {status}, received {actual}"
     )
     return out["response"]
 
@@ -316,13 +317,13 @@ def suite(runner, issuer, path):
                     "POST",
                     "/auth/api/keys",
                     csrf,
-                    {"name": "short-lived", "expires_at": int(time.time()) + 1},
+                    {"name": "short-lived", "expires_at": int(time.time()) + 3},
                 ),
             ),
             201,
         )
     )
-    time.sleep(1.1)
+    time.sleep(max(0, expired["key"]["expires_at"] - time.time()) + 0.1)
     response(
         runner.call(
             "handle",
