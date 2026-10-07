@@ -19,9 +19,28 @@ Mount Stargate in your application, pass your identity provider settings and pro
 
 All four integrations use the same Rust runtime. Configure it through the host application; Stargate does not discover configuration files or read environment variables.
 
-## Get started
+## Install
 
-v0.1 can be built from source. Publication targets `@syntropika/stargate` on npm and `syntropika-stargate` on PyPI and crates.io. Registry releases are prepared through GitHub Actions; see [publishing](docs/publishing.md) for setup and current platform support. Native bindings must be built for the target operating system and architecture.
+Choose the package for your application:
+
+```sh
+# Python / FastAPI
+python -m pip install syntropika-stargate fastapi
+
+# Node / Express
+npm install @syntropika/stargate express
+
+# Rust / Axum
+cargo add syntropika-stargate --rename stargate
+```
+
+Python's import remains `stargate`; the Rust command also makes the import `stargate`. npm selects an optional native binary automatically. Prebuilt Node and Python packages target Linux x64, macOS arm64 and Windows x64. Rust applications compile the runtime from source. Go integration is available from this repository and links to the Rust C ABI.
+
+See [integration guides](docs/integrations.md) for configuration and [publishing](docs/publishing.md) for platform requirements and the GitHub Actions release workflow.
+
+## Build from source
+
+Native bindings must be built for the target operating system and architecture.
 
 ```sh
 git clone https://github.com/syntropika/stargate.git
