@@ -85,6 +85,7 @@ pub struct BrandingConfig {
     pub app_name: String,
     pub logo: Option<Url>,
     pub accent: String,
+    pub stylesheet: Option<Url>,
 }
 impl Default for BrandingConfig {
     fn default() -> Self {
@@ -92,6 +93,7 @@ impl Default for BrandingConfig {
             app_name: "Stargate".into(),
             logo: None,
             accent: "#315cfd".into(),
+            stylesheet: None,
         }
     }
 }
@@ -190,6 +192,12 @@ impl AuthConfig {
         if let Some(logo) = &self.branding.logo {
             self.validate_url(logo)?;
         }
+        if let Some(stylesheet) = &self.branding.stylesheet {
+            self.validate_url(stylesheet)?;
+            if stylesheet.origin() != self.base_url.origin() {
+                return Err(Error::Config);
+            }
+        }
         validate_scopes(&self.session.scopes)?;
         let mut names = std::collections::HashSet::new();
         for provider in &self.oidc {
@@ -268,4 +276,34 @@ pub fn validate_scopes(scopes: &[String]) -> Result<()> {
         return Err(Error::BadRequest);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod branding_tests {
+    use super::*;
+
+    fn config() -> AuthConfig {
+        AuthConfig::new(
+            "https://app.example.com".parse().unwrap(),
+            StorageConfig::Turso(TursoConfig::new("test.db")),
+        )
+    }
+
+    #[test]
+    fn custom_stylesheet_must_share_the_host_origin() {
+        let mut config = config();
+        assert!(config.validate().is_ok());
+        config.branding.stylesheet =
+            Some("https://app.example.com/brand/theme.css".parse().unwrap());
+        assert!(config.validate().is_ok());
+        for url in [
+            "https://other.example.com/theme.css",
+            "https://app.example.com:8443/theme.css",
+            "http://app.example.com/theme.css",
+            "https://user:password@app.example.com/theme.css",
+        ] {
+            config.branding.stylesheet = Some(url.parse().unwrap());
+            assert!(config.validate().is_err(), "accepted {url}");
+        }
+    }
 }

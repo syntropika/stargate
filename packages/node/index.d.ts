@@ -8,7 +8,7 @@ export interface Config {
   baseUrl:string;storage:{type:'turso';path:string;connections?:number;retry_limit?:number};
   oidc?:{name?:string;issuer:string;clientId:string;clientSecret:string}|{name?:string;issuer:string;clientId:string;clientSecret:string}[];
   pathPrefix?:string;maxBodyBytes?:number;maxHeaderBytes?:number;trustedProxies?:string[];allowInsecureLoopback?:boolean;
-  session?:{ttl_seconds?:number;scopes?:string[]};branding?:{app_name?:string;logo?:string|null;accent?:string};
+  session?:{ttl_seconds?:number;scopes?:string[]};branding?:{app_name?:string;logo?:string|null;accent?:string;stylesheet?:string|null};
 }
 export function turso(path:string,options?:{connections?:number;retry_limit?:number}):Config['storage'];
 export function createAuth(config:Config):Promise<{handle(request:Request):Promise<Outcome>;authorize(identity:Identity|null,policy:Policy):Promise<{allowed:boolean;status:number}>;middleware():RequestHandler;handler():RequestHandler;required():RequestHandler;requireScope(...scopes:string[]):RequestHandler}>;

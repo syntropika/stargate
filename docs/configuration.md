@@ -13,6 +13,7 @@ All values are passed to the constructor. The library does not read environment 
 | `branding.app_name` | `Stargate` | Nonempty, at most 128 bytes, no control characters |
 | `branding.logo` | None | HTTPS URL; rendered with escaped attributes |
 | `branding.accent` | `#315cfd` | Six-digit hexadecimal color |
+| `branding.stylesheet` | None | HTTPS stylesheet URL on the same origin as `base_url`; loaded after the embedded CSS |
 | `max_body_bytes` | 65536 | Between 1 byte and 16 MiB |
 | `max_header_bytes` | 16384 | Between 1 byte and 1 MiB |
 | `trusted_proxies` | Empty | Explicit parsed IP networks |
@@ -21,6 +22,12 @@ All values are passed to the constructor. The library does not read environment 
 | `storage.retry_limit` | 32 | Between 0 and 64 additional attempts |
 
 Scope names contain ASCII letters, digits, `:`, `.`, `_` and `-`; there are at most 64 names and each is at most 128 bytes. API key expiry is optional. Expired and revoked credentials fail authentication; an invalid bearer credential never falls back to a valid cookie.
+
+The host can serve a brand stylesheet, images and fonts from its own static routes.
+Set `branding.stylesheet` to that stylesheet's absolute URL. It overrides presentation
+without replacing Stargate's account pages, forms or authentication behavior. External
+stylesheets and inline styles remain blocked; self-hosted fonts are allowed by the
+account UI's Content Security Policy. Omit the setting to retain the default UI.
 
 ## OIDC
 

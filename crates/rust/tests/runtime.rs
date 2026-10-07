@@ -550,3 +550,29 @@ async fn proxies_and_noncanonical_owned_routes() {
         );
     }
 }
+
+#[tokio::test]
+async fn host_theme_renders_without_relaxing_script_or_style_policy() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut config = AuthConfig::new(
+        "https://app.example.com".parse().unwrap(),
+        StorageConfig::Turso(TursoConfig::new(
+            dir.path().join("theme.db").to_str().unwrap(),
+        )),
+    );
+    config.branding.stylesheet = Some("https://app.example.com/brand/theme.css".parse().unwrap());
+    let runtime = Stargate::new(config).await.unwrap();
+    let response = respond(runtime.runtime.handle(request("GET", "/auth/", None)).await);
+    let html = String::from_utf8(response.body).unwrap();
+    assert!(html.contains("href=\"https://app.example.com/brand/theme.css\""));
+    let csp = &response
+        .headers
+        .iter()
+        .find(|(name, _)| name == "content-security-policy")
+        .unwrap()
+        .1;
+    assert!(csp.contains("font-src 'self'"));
+    assert!(csp.contains("style-src 'self'"));
+    assert!(csp.contains("script-src 'self'"));
+    assert!(!csp.contains("unsafe-inline"));
+}

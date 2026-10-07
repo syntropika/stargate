@@ -39,9 +39,10 @@ type SessionConfig struct {
 	Scopes     []string `json:"scopes,omitempty"`
 }
 type BrandingConfig struct {
-	AppName string  `json:"app_name,omitempty"`
-	Logo    *string `json:"logo,omitempty"`
-	Accent  string  `json:"accent,omitempty"`
+	Stylesheet *string `json:"stylesheet,omitempty"`
+	AppName    string  `json:"app_name,omitempty"`
+	Logo       *string `json:"logo,omitempty"`
+	Accent     string  `json:"accent,omitempty"`
 }
 type Config struct {
 	BaseURL               string          `json:"base_url"`

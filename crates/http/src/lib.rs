@@ -220,10 +220,16 @@ impl Runtime {
                 return Ok(respond(response(
                     200,
                     "text/html; charset=utf-8",
-                    ui::page(
+                    ui::page_with_stylesheet(
                         &self.auth.config.path_prefix,
                         &self.auth.config.branding.app_name,
                         self.auth.config.branding.logo.as_ref().map(|u| u.as_str()),
+                        self.auth
+                            .config
+                            .branding
+                            .stylesheet
+                            .as_ref()
+                            .map(|u| u.as_str()),
                     )
                     .into_bytes(),
                 )));
@@ -446,7 +452,7 @@ fn respond(response: AuthResponse) -> AuthOutcome {
     AuthOutcome::Respond { response }
 }
 pub fn response(status: u16, content_type: &str, body: Vec<u8>) -> AuthResponse {
-    AuthResponse {status,body,headers:vec![("content-type".into(),content_type.into()),("cache-control".into(),"no-store".into()),("x-content-type-options".into(),"nosniff".into()),("referrer-policy".into(),"no-referrer".into()),("content-security-policy".into(),"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' https:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'".into()),("x-frame-options".into(),"DENY".into())] }
+    AuthResponse {status,body,headers:vec![("content-type".into(),content_type.into()),("cache-control".into(),"no-store".into()),("x-content-type-options".into(),"nosniff".into()),("referrer-policy".into(),"no-referrer".into()),("content-security-policy".into(),"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; img-src 'self' https:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'".into()),("x-frame-options".into(),"DENY".into())] }
 }
 fn json_response(status: u16, value: Value) -> AuthOutcome {
     respond(response(
