@@ -62,8 +62,8 @@ jobs:
           CARGO_TARGET_DIR="$PWD/target" cargo check --workspace --manifest-path "$RUNNER_TEMP/release/rust/Cargo.toml"
 
   node-build:
-    needs: validate
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-22.04
@@ -103,8 +103,8 @@ jobs:
           if-no-files-found: error
 
   python-build:
-    needs: validate
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-22.04
@@ -141,7 +141,7 @@ jobs:
 
   pypi-publish:
     if: inputs.publish
-    needs: [node-build, python-build]
+    needs: [validate, node-build, python-build]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -156,7 +156,7 @@ jobs:
 
   npm-publish:
     if: inputs.publish
-    needs: [node-build, python-build]
+    needs: [validate, node-build, python-build]
     runs-on: ubuntu-latest
     environment: npm
     permissions:
@@ -196,7 +196,7 @@ jobs:
 
   crates-publish:
     if: inputs.publish
-    needs: [node-build, python-build]
+    needs: [validate, node-build, python-build]
     runs-on: ubuntu-latest
     environment: crates-io
     permissions:
