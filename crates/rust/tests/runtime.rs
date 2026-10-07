@@ -576,3 +576,67 @@ async fn host_theme_renders_without_relaxing_script_or_style_policy() {
     assert!(csp.contains("script-src 'self'"));
     assert!(!csp.contains("unsafe-inline"));
 }
+
+#[tokio::test]
+async fn embedded_react_assets_follow_the_configured_prefix_and_accent() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut config = AuthConfig::new(
+        "https://app.example.com".parse().unwrap(),
+        StorageConfig::Turso(TursoConfig::new(
+            dir.path().join("assets.db").to_str().unwrap(),
+        )),
+    );
+    config.path_prefix = "/account".into();
+    config.branding.accent = "#ec4899".into();
+    let runtime = Stargate::new(config).await.unwrap();
+    let page = respond(
+        runtime
+            .runtime
+            .handle(request("GET", "/account/keys", None))
+            .await,
+    );
+    assert_eq!(page.status, 200);
+    let html = String::from_utf8(page.body).unwrap();
+    assert!(html.contains("src=\"/account/assets/app.js\""));
+    assert!(html.contains("\"page\":\"keys\""));
+    assert!(html.contains("href=\"/account/assets/stargate.svg\""));
+    for (path, media_type) in [
+        ("app.js", "text/javascript"),
+        ("app.css", "text/css"),
+        ("stargate.svg", "image/svg+xml"),
+    ] {
+        let response = respond(
+            runtime
+                .runtime
+                .handle(request("GET", &format!("/account/assets/{path}"), None))
+                .await,
+        );
+        assert_eq!(response.status, 200);
+        assert!(
+            response
+                .headers
+                .iter()
+                .any(|(name, value)| name == "content-type" && value.starts_with(media_type))
+        );
+        let body = String::from_utf8(response.body).unwrap();
+        if path == "app.css" {
+            assert!(body.contains("--accent:#ec4899"));
+            assert!(!body.contains("--accent:#c4a882"));
+            assert!(body.contains("data:font/woff2;base64,"));
+        } else if path == "app.js" {
+            assert!(!body.contains("process.env.NODE_ENV"));
+            assert!(body.contains("Copyright (c) Meta Platforms"));
+        } else {
+            assert!(body.contains("<svg"));
+            assert!(body.contains("Stargate"));
+        }
+        let head = respond(
+            runtime
+                .runtime
+                .handle(request("HEAD", &format!("/account/assets/{path}"), None))
+                .await,
+        );
+        assert_eq!(head.status, 200);
+        assert!(head.body.is_empty());
+    }
+}

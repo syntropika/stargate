@@ -1,0 +1,597 @@
+@import 'tailwindcss';
+@font-face {
+  font-family: 'Stargate Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2')
+    format('woff2');
+}
+@font-face {
+  font-family: 'Stargate Serif';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('@fontsource-variable/eb-garamond/files/eb-garamond-latin-wght-normal.woff2')
+    format('woff2');
+}
+@layer base {
+  :root {
+    color-scheme: dark;
+    --accent: #c4a882;
+    --panel-background: #0a0a0a;
+    --panel-surface: #141210;
+    --panel-border: #39322a;
+    --panel-input-border: #766957;
+    --panel-foreground: #f4f1ec;
+    --panel-body: #e8e3db;
+    --panel-muted: #9c9590;
+    --panel-mono: 'Stargate Mono', monospace;
+    --panel-serif: 'Stargate Serif', Georgia, serif;
+    font: 1rem/1.6 var(--panel-mono);
+    color: var(--panel-foreground);
+    background: var(--panel-background);
+  }
+  body {
+    margin: 0;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--panel-background);
+  }
+}
+@layer components {
+  .account-app {
+    font-size: 1rem;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .account-app a {
+    color: var(--accent);
+    text-underline-offset: 0.25em;
+  }
+  .account-app :is(h1, h2, h3, p) {
+    margin: 0;
+  }
+  .account-app p {
+    font: 1.5rem/1.5 var(--panel-serif);
+    color: var(--panel-body);
+  }
+  .account-app h1 {
+    font: 400 3.5rem/1.1 var(--panel-serif);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .account-app h2 {
+    font: 400 1.875rem/1.2 var(--panel-serif);
+  }
+  .account-app h3 {
+    font: 500 1.375rem/1.3 var(--panel-serif);
+  }
+  .account-app code {
+    font-family: var(--panel-mono);
+  }
+  .account-app :is(button, .provider, .secondary-button) {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.65rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: 0.1875rem;
+    background: var(--accent);
+    color: var(--panel-background);
+    font: inherit;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .account-app :is(button, .provider, .secondary-button):hover:not(:disabled) {
+    filter: brightness(1.15);
+  }
+  .account-app :is(button, .provider, .secondary-button):active:not(:disabled) {
+    filter: brightness(0.9);
+  }
+  .account-app button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .account-app .secondary-button {
+    background: transparent;
+    color: var(--accent);
+  }
+  .account-app :is(button, a, input):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .account-app [hidden] {
+    display: none !important;
+  }
+  .skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 1.5rem;
+    z-index: 1;
+    padding: 0.75rem;
+    background: var(--panel-surface);
+    transform: translateY(-200%);
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+  .brand-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 96rem;
+    margin-inline: auto;
+    padding: 1.25rem 5rem;
+    min-height: 5.5rem;
+  }
+  .brand-header .brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    min-width: 0;
+    color: var(--panel-foreground);
+    text-decoration: none;
+  }
+  .brand-lockup span {
+    font-size: 1.125rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  .brand-header .logo {
+    width: 3rem;
+    height: 3rem;
+    flex: none;
+    object-fit: contain;
+  }
+  .brand-header .sign-out {
+    border-color: transparent;
+    color: var(--panel-muted);
+    padding-right: 0;
+  }
+  .account-navigation {
+    display: flex;
+    gap: 2.5rem;
+    width: 100%;
+    max-width: 96rem;
+    margin-inline: auto;
+    padding: 0 5rem;
+    border-block: 1px solid var(--panel-border);
+  }
+  .account-navigation a {
+    display: flex;
+    align-items: center;
+    min-height: 4.375rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--panel-muted);
+    text-decoration: none;
+  }
+  .account-navigation a:hover {
+    color: var(--panel-foreground);
+  }
+  .account-navigation a[aria-current='page'] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .account-shell {
+    width: 100%;
+    max-width: 96rem;
+    margin: 3rem auto 3rem;
+    padding-inline: 5rem;
+  }
+  .account-content {
+    min-width: 0;
+    container: account-content / inline-size;
+  }
+  .account-content:focus {
+    outline: none;
+  }
+  .account-view {
+    display: grid;
+    gap: 2.75rem;
+  }
+  .page-heading {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .page-heading p {
+    max-width: 70ch;
+  }
+  .content-section {
+    display: grid;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+  .section-heading {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .section-heading p {
+    font-size: 1.25rem;
+  }
+  .collection-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .collection-heading h2 {
+    flex: 1;
+  }
+  .anonymous-shell {
+    max-width: 46rem;
+    margin-top: 5rem;
+  }
+  .provider-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .provider-list:empty {
+    display: none;
+  }
+  .provider {
+    width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .identity-list {
+    display: grid;
+    margin: 0;
+  }
+  .identity-list > div {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: 1.5rem;
+    border-top: 1px solid var(--panel-border);
+    padding-block: 1.25rem;
+  }
+  .identity-list dt {
+    color: var(--panel-muted);
+  }
+  .identity-list dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .key-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    margin: 0;
+  }
+  .form-field {
+    display: grid;
+    align-content: start;
+    min-width: 0;
+    gap: 0.5rem;
+    font-size: 1rem;
+  }
+  .form-field input {
+    width: 100%;
+    min-width: 0;
+    min-height: 3rem;
+    border: 1px solid var(--panel-input-border);
+    border-radius: 0.1875rem;
+    padding: 0.65rem 0.875rem;
+    color: inherit;
+    background: var(--panel-surface);
+    font: inherit;
+    caret-color: var(--accent);
+  }
+  .form-field input::placeholder {
+    color: var(--panel-muted);
+    opacity: 1;
+  }
+  .form-field small {
+    color: var(--panel-muted);
+    font-size: 0.875rem;
+  }
+  .form-actions {
+    display: flex;
+    align-items: start;
+  }
+  .form-actions button {
+    min-height: 3rem;
+    white-space: nowrap;
+  }
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .secret-panel {
+    display: grid;
+    gap: 0.75rem;
+    border: 1px solid var(--accent);
+    padding: 1.5rem;
+    border-radius: 0.1875rem;
+  }
+  .secret-panel code {
+    display: block;
+    padding: 1rem;
+    background: var(--panel-surface);
+    overflow-wrap: anywhere;
+  }
+  .key-register {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    border-bottom: 1px solid var(--panel-border);
+    text-align: left;
+  }
+  .key-register thead th {
+    padding: 0.5rem 1rem 0.75rem 0;
+    color: var(--panel-muted);
+    font-size: 0.875rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .key-register thead th:first-child {
+    width: 33%;
+  }
+  .key-register thead th:nth-child(2) {
+    width: 34%;
+  }
+  .key-register thead th:nth-child(3) {
+    width: 21%;
+  }
+  .key-register thead th:last-child {
+    width: 12%;
+  }
+  .key-register tbody :is(th, td) {
+    padding: 1rem 1.5rem 1rem 0;
+    border-top: 1px solid var(--panel-border);
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+    font-weight: 400;
+  }
+  .key-register tbody th strong {
+    display: block;
+    font: 400 1.5rem/1.25 var(--panel-serif);
+  }
+  .key-register tbody th code {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--panel-muted);
+  }
+  .key-register .register-action {
+    padding-right: 0;
+    text-align: right;
+  }
+  .key-register .register-action button {
+    border-color: transparent;
+    padding-right: 0;
+  }
+  .mobile-label {
+    display: none;
+  }
+  .resource-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .resource-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border-top: 1px solid var(--panel-border);
+    padding-block: 1.5rem;
+  }
+  .resource-details {
+    display: grid;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .resource-details > strong {
+    font: 400 1.5rem/1.25 var(--panel-serif);
+  }
+  .resource-meta {
+    display: grid;
+    gap: 0.25rem;
+    color: var(--panel-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .resource-row > button {
+    flex-shrink: 0;
+  }
+  .empty-state {
+    display: grid;
+    gap: 0.5rem;
+    border-block: 1px solid var(--panel-border);
+    padding-block: 1.5rem;
+  }
+  .empty-state p {
+    max-width: 70ch;
+  }
+  .account-app .notice {
+    display: block;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--panel-border);
+    border-radius: 0.1875rem;
+    background: var(--panel-surface);
+    color: var(--panel-foreground);
+    overflow-wrap: anywhere;
+  }
+  .notice:empty {
+    display: none;
+  }
+  .loading-state {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .loading-state output {
+    color: var(--panel-muted);
+  }
+  .loading-lines {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .loading-lines span {
+    height: 1rem;
+    max-width: 100%;
+    background: var(--panel-surface);
+    border-radius: 0.125rem;
+  }
+  .loading-lines span:nth-child(2) {
+    width: 85%;
+  }
+  .loading-lines span:nth-child(3) {
+    width: 60%;
+  }
+  .account-footer {
+    width: 100%;
+    max-width: 96rem;
+    margin: auto auto 0;
+    padding: 1rem 5rem 2rem;
+    border-top: 1px solid var(--panel-border);
+    color: var(--panel-muted);
+    font-size: 0.875rem;
+  }
+  @container account-content (min-width: 48rem) {
+    .key-form {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .form-actions {
+      grid-column: 1 / -1;
+    }
+  }
+  @container account-content (min-width: 70rem) {
+    .key-form {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.95fr) auto;
+    }
+    .form-actions {
+      grid-column: auto;
+      padding-top: 1.875rem;
+    }
+  }
+  @container account-content (max-width: 47.99rem) {
+    .key-register,
+    .key-register tbody {
+      display: block;
+    }
+    .key-register thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .key-register tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      border-top: 1px solid var(--panel-border);
+      padding-block: 1.25rem;
+    }
+    .key-register tbody :is(th, td) {
+      display: block;
+      border: none;
+      padding: 0;
+    }
+    .key-register tbody th {
+      grid-column: 1 / -1;
+    }
+    .key-register tbody td:not(.register-action) {
+      grid-column: 1 / -1;
+    }
+    .key-register .register-action {
+      grid-column: 2;
+    }
+    .key-register .register-action button {
+      padding-right: 1rem;
+      border-color: var(--panel-border);
+    }
+    .mobile-label {
+      display: block;
+      color: var(--panel-muted);
+      font-size: 0.875rem;
+      margin-bottom: 0.125rem;
+    }
+  }
+  @media (max-width: 60rem) {
+    .brand-header,
+    .account-navigation,
+    .account-shell,
+    .account-footer {
+      padding-inline: 2rem;
+    }
+    .account-navigation {
+      gap: 1rem;
+    }
+  }
+  @media (max-width: 37.5rem) {
+    .account-app p {
+      font-size: 1.25rem;
+    }
+    .brand-header,
+    .account-navigation,
+    .account-shell,
+    .account-footer {
+      padding-inline: 1.5rem;
+    }
+    .brand-header {
+      gap: 0.75rem;
+    }
+    .brand-header .brand-lockup {
+      gap: 0.75rem;
+    }
+    .brand-lockup span {
+      font-size: 0.875rem;
+      letter-spacing: 0.15em;
+    }
+    .brand-header .logo {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+    .brand-header .sign-out {
+      font-size: 0.875rem;
+      padding-inline: 0.25rem;
+    }
+    .account-navigation {
+      gap: 0;
+      justify-content: space-between;
+    }
+    .account-navigation a {
+      padding-inline: 0.5rem;
+      min-height: 3.5rem;
+    }
+    .account-shell {
+      margin-top: 2rem;
+    }
+    .account-view {
+      gap: 2rem;
+    }
+    .account-app h1 {
+      font-size: 2.5rem;
+    }
+    .identity-list > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.5rem;
+    }
+    .resource-row {
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .resource-details {
+      flex-basis: 100%;
+    }
+    .secret-panel {
+      padding: 1rem;
+    }
+  }
+}

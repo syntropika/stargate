@@ -1,0 +1,21 @@
+---
+import mark from '../../../branding/mark.svg?raw';
+import Icon from './Icon.astro';
+const runtimeMark = mark.replaceAll('"title"', '"runtime-mark-title"');
+---
+<figure class="runtime-diagram" aria-label="Rust, Node, Python and Go share one Stargate runtime inside your application, backed by embedded Turso storage.">
+  <div class="diagram-languages" role="group" aria-label="Supported integrations">
+    {['Rust', 'Node', 'Python', 'Go'].map(language => <span>{language}</span>)}
+  </div>
+  <div class="diagram-connections" aria-hidden="true"><i class="route route-rust" /><i class="route route-node" /><i class="route route-python" /><i class="route route-go" /><i class="runtime-stem" /></div>
+  <div class="application-boundary">
+    <div class="application-heading"><span>Your application</span><span class="diagram-caption">Your server, TLS, configuration</span></div>
+    <div class="runtime-boundary">
+      <div class="runtime-identity">
+        <span class="runtime-mark" aria-hidden="true" set:html={runtimeMark} />
+        <div><p class="runtime-title"><strong>Stargate</strong><span> · Rust runtime</span></p><p class="runtime-features">OIDC · Sessions · API Keys · Account UI</p></div>
+      </div>
+      <div class="storage-boundary"><Icon name="database" /><span>Embedded Turso</span><span class="diagram-caption">Local, persistent storage</span></div>
+    </div>
+  </div>
+</figure>

@@ -1,6 +1,40 @@
 //! Production assets are compiled into the Rust artifact.
 pub const JAVASCRIPT: &str = include_str!("../assets/app.js");
 pub const STYLESHEET: &str = include_str!("../assets/app.css");
+pub const LOGO: &str = include_str!("../assets/stargate.svg");
+
+pub struct Page<'a> {
+    pub prefix: &'a str,
+    pub name: &'a str,
+    pub logo: Option<&'a str>,
+    pub stylesheet: Option<&'a str>,
+    pub providers: Vec<&'a str>,
+    pub route: &'a str,
+}
+
+pub fn account_page(page: Page<'_>) -> String {
+    let config = serde_json::json!({
+        "prefix": page.prefix, "name": page.name, "logo": page.logo,
+        "providers": page.providers, "page": page.route.trim_matches('/'),
+    })
+    .to_string()
+    .replace('<', "\\u003c")
+    .replace('&', "\\u0026");
+    let prefix = escape(page.prefix);
+    let name = escape(page.name);
+    let favicon = page
+        .logo
+        .map(escape)
+        .unwrap_or_else(|| format!("{prefix}/assets/stargate.svg"));
+    let stylesheet = page
+        .stylesheet
+        .map(|url| format!("<link rel=\"stylesheet\" href=\"{}\">", escape(url)))
+        .unwrap_or_default();
+    format!(
+        r#"<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="stargate-prefix" content="{prefix}"><title>{name} · Account</title><link rel="icon" href="{favicon}"><link rel="stylesheet" href="{prefix}/assets/app.css">{stylesheet}<script defer src="{prefix}/assets/app.js"></script></head><body><div id="stargate-root"><main aria-busy="true"><h1>{name}</h1><p role="status">Loading your account…</p><noscript>Enable JavaScript to manage your account.</noscript></main></div><script id="stargate-config" type="application/json">{config}</script></body></html>"#
+    )
+}
+
 fn escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -18,17 +52,14 @@ pub fn page_with_stylesheet(
     logo: Option<&str>,
     stylesheet: Option<&str>,
 ) -> String {
-    let prefix = escape(prefix);
-    let name = escape(name);
-    let logo = logo
-        .map(|url| format!("<img class=logo src=\"{}\" alt=\"\">", escape(url)))
-        .unwrap_or_default();
-    let stylesheet = stylesheet
-        .map(|url| format!("<link rel=\"stylesheet\" href=\"{}\">", escape(url)))
-        .unwrap_or_default();
-    format!(
-        r#"<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="stargate-prefix" content="{prefix}"><title>{name} · Account</title><link rel="stylesheet" href="{prefix}/assets/app.css">{stylesheet}<script defer src="{prefix}/assets/app.js"></script></head><body><header>{logo}<a href="{prefix}/">{name}</a><span>Account &amp; access</span></header><main><nav aria-label="Account"><a href="{prefix}/profile">Profile</a><a href="{prefix}/keys">API keys</a><a href="{prefix}/sessions">Sessions</a><button id="logout" hidden>Sign out</button></nav><p id="notice" role="status" aria-live="polite"></p><section id="login" hidden><h1>Your account, connected.</h1><p>Sign in to manage your profile, API keys and sessions.</p><div id="providers"></div></section><section id="profile" hidden><h1>Profile</h1><dl id="identity"></dl></section><section id="keys" hidden><h1>API keys</h1><p>Create credentials for your apps. Each secret is shown once.</p><form id="create-key"><label>Name<input name="name" required maxlength="128" placeholder="Development laptop"></label><label>Scopes<input name="scopes" placeholder="projects:read projects:write"></label><label>Expires at (optional)<input name="expires" type="datetime-local"></label><button>Create key</button></form><div id="new-secret" hidden><p>Copy this key now. It will not be shown again.</p><code id="secret"></code><button id="copy-secret">Copy</button><button id="dismiss-secret">Dismiss</button></div><ul id="key-list"></ul></section><section id="sessions" hidden><h1>Sessions</h1><p>Review where you are signed in and revoke access.</p><button id="revoke-all">Revoke all sessions</button><ul id="session-list"></ul></section></main><footer>Secured by Stargate</footer></body></html>"#
-    )
+    account_page(Page {
+        prefix,
+        name,
+        logo,
+        stylesheet,
+        providers: vec![],
+        route: "",
+    })
 }
 
 #[cfg(test)]
@@ -56,5 +87,36 @@ mod tests {
             page("/auth", "Example", None),
             page_with_stylesheet("/auth", "Example", None, None)
         );
+    }
+
+    #[test]
+    fn public_configuration_cannot_escape_the_json_script() {
+        let name = "Example </script><script>alert('x')</script> & team";
+        let html = account_page(Page {
+            prefix: "/account",
+            name,
+            logo: Some("https://example.com/logo.png?x=1&y=2"),
+            stylesheet: None,
+            providers: vec!["team \"oidc\""],
+            route: "/keys/",
+        });
+        let marker = "<script id=\"stargate-config\" type=\"application/json\">";
+        let config = html
+            .split_once(marker)
+            .unwrap()
+            .1
+            .split_once("</script>")
+            .unwrap()
+            .0;
+        assert!(!config.contains('<'));
+        assert!(!config.contains('&'));
+        let value: serde_json::Value = serde_json::from_str(config).unwrap();
+        assert_eq!(value["name"], name);
+        assert_eq!(value["prefix"], "/account");
+        assert_eq!(value["page"], "keys");
+        assert_eq!(value["providers"][0], "team \"oidc\"");
+        assert!(html.contains("src=\"/account/assets/app.js\""));
+        assert!(html.contains("href=\"/account/assets/app.css\""));
+        assert!(!html.contains("<script>alert"));
     }
 }

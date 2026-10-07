@@ -92,7 +92,7 @@ impl Default for BrandingConfig {
         Self {
             app_name: "Stargate".into(),
             logo: None,
-            accent: "#315cfd".into(),
+            accent: "#c4a882".into(),
             stylesheet: None,
         }
     }

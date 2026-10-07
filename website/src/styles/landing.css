@@ -1,0 +1,530 @@
+.landing {
+  --frame-padding: clamp(1.5rem, 5.55vw, 5.375rem);
+  --utility: system-ui, sans-serif;
+}
+.landing-frame {
+  max-width: 96rem;
+  margin-inline: auto;
+  padding-inline: var(--frame-padding);
+}
+.landing .site-header {
+  padding: 1.1875rem clamp(1.5rem, 4.7vw, 4.5rem);
+}
+.landing .brand-mark {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+.landing .brand > span:last-child {
+  font-size: 1.5rem;
+  letter-spacing: 0.3em;
+}
+.landing .site-header nav a {
+  color: var(--body);
+  font-family: var(--utility);
+  font-size: 1rem;
+}
+.landing .site-header nav a:hover {
+  color: var(--accent);
+}
+.landing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.11fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 4rem;
+  padding-block: 4rem 3rem;
+}
+.hero-copy h1 {
+  font: 400 clamp(3.25rem, 6.65vw, 6.375rem) / 0.94 var(--serif);
+  letter-spacing: -0.02em;
+  margin: 0 0 2.5rem;
+}
+.hero-copy > p {
+  font: 400 1.75rem / 1.4 var(--serif);
+  color: var(--body);
+  margin: 0;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2.75rem;
+  margin-top: 2.5rem;
+  font-size: 1rem;
+  font-family: var(--utility);
+}
+.primary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2.25rem;
+  min-width: 201px;
+  justify-content: space-between;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--ground);
+  text-decoration: none;
+}
+.primary-link:hover {
+  background: var(--ink);
+  color: var(--ground);
+}
+.primary-link:active {
+  transform: translateY(1px);
+}
+.repository-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 44px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.repository-link span {
+  border-bottom: 1px solid var(--line);
+}
+.runtime-diagram {
+  margin: 0;
+  min-width: 0;
+  container-type: inline-size;
+  font-size: 1rem;
+  font-family: var(--utility);
+}
+.diagram-languages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  padding-inline: 0.875rem;
+}
+.diagram-languages span {
+  display: grid;
+  place-items: center;
+  min-height: 3.25rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.diagram-connections {
+  position: relative;
+  height: 4.375rem;
+  margin-inline: 0.875rem;
+  color: var(--accent);
+}
+.route {
+  position: absolute;
+  top: 0;
+  height: 2.5rem;
+  border-bottom: 1px solid;
+}
+.route-rust,
+.route-node {
+  border-left: 1px solid;
+  border-bottom-left-radius: 3rem;
+}
+.route-python,
+.route-go {
+  border-right: 1px solid;
+  border-bottom-right-radius: 3rem;
+}
+.route-rust {
+  left: 10.5%;
+  width: 39.5%;
+}
+.route-node {
+  left: 37%;
+  width: 13%;
+}
+.route-python {
+  right: 37%;
+  width: 13%;
+}
+.route-go {
+  right: 10.5%;
+  width: 39.5%;
+}
+.runtime-stem {
+  position: absolute;
+  left: 50%;
+  top: 2.5rem;
+  height: 6.125rem;
+  border-left: 1px solid;
+  z-index: 1;
+}
+.runtime-stem::after {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  left: -4px;
+  bottom: 0;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+  transform: rotate(45deg);
+}
+.application-boundary {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 1.25rem 2rem 0.875rem;
+}
+.application-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 1.125rem;
+}
+.diagram-caption {
+  font: 400 1rem / 1.35 var(--serif);
+  color: var(--muted);
+}
+.runtime-boundary {
+  border: 1px dashed #887354;
+  border-radius: 7px;
+  padding: 1.5rem 0.875rem 0.875rem;
+}
+.runtime-identity {
+  display: flex;
+  align-items: center;
+  gap: 2.25rem;
+  min-height: 7.25rem;
+  padding-inline: 3.75rem 0.5rem;
+  padding-bottom: 1.25rem;
+}
+.runtime-mark {
+  width: 4rem;
+  height: 4rem;
+  flex: none;
+}
+.runtime-mark svg {
+  width: 100%;
+  height: 100%;
+}
+.runtime-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  white-space: nowrap;
+}
+.runtime-title strong {
+  font-weight: 500;
+}
+.runtime-features {
+  margin: 0;
+  color: var(--body);
+  font-size: 0.875rem;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.storage-boundary {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 4.25rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+}
+.storage-boundary > svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--accent);
+  flex: none;
+}
+.storage-boundary .diagram-caption {
+  margin-left: auto;
+}
+.installation {
+  border-block: 1px solid var(--line);
+  padding-block: 2.25rem 0.25rem;
+}
+.install-tabs {
+  display: flex;
+  gap: 1.25rem;
+}
+.install-tabs button {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  color: var(--muted);
+  font: 1.125rem / 1.5 var(--utility);
+  min-height: 44px;
+  padding: 0.5rem 0;
+  min-width: 94px;
+  text-align: left;
+  cursor: pointer;
+}
+.install-tabs button[aria-selected='true'] {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+.install-tabs button:hover {
+  color: var(--ink);
+}
+.install-panel[hidden] {
+  display: none;
+}
+.install-command {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  min-height: 5.75rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 1.25rem 1.75rem;
+  background: #141210;
+}
+.install-command code {
+  font: inherit;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.shell-prompt {
+  color: var(--accent);
+}
+.copy-command {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  margin-left: auto;
+  flex: none;
+  color: var(--muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.copy-command:hover {
+  color: var(--accent);
+}
+.copy-command:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.install-command p {
+  margin: 0;
+}
+.install-command p a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.install-help {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2rem;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+}
+.install-help a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: var(--muted);
+}
+.install-help a:hover {
+  color: var(--accent);
+}
+.install-help svg {
+  width: 1.125rem;
+}
+.copy-status {
+  color: var(--accent);
+}
+.ownership {
+  padding-block: 3.25rem 5rem;
+}
+.ownership h2 {
+  font: 400 3.125rem / 1.15 var(--serif);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+}
+.ownership-lead {
+  font: 400 1.625rem / 1.45 var(--serif);
+  color: var(--body);
+  margin: 0;
+}
+.ownership-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 5rem;
+  margin-block: 3rem 2rem;
+}
+.ownership-description {
+  margin: 0;
+  max-width: 36ch;
+  font: 400 1.75rem / 1.4 var(--serif);
+  color: var(--body);
+}
+.capability-list {
+  margin: 0;
+  font-size: 0.875rem;
+}
+.capability-list > div {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr);
+  gap: 1.5rem;
+  padding-block: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.capability-list dt {
+  color: var(--ink);
+}
+.capability-list dd {
+  margin: 0;
+  color: var(--muted);
+}
+.ownership .text-link {
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+@container (max-width: 36rem) {
+  .runtime-identity {
+    padding-inline: 0.5rem;
+    gap: 1rem;
+  }
+  .runtime-title {
+    font-size: 1rem;
+  }
+  .runtime-features {
+    white-space: normal;
+    font-size: 0.75rem;
+  }
+  .application-heading {
+    align-items: start;
+  }
+  .application-heading .diagram-caption {
+    max-width: 11rem;
+    text-align: right;
+  }
+  .storage-boundary {
+    padding-inline: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+  }
+  .storage-boundary .diagram-caption {
+    font-size: 0.875rem;
+  }
+}
+@media (max-width: 72rem) {
+  .landing-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3rem;
+  }
+  .hero-copy h1 {
+    font-size: clamp(3.25rem, 8.3vw, 6rem);
+  }
+  .runtime-diagram {
+    width: 100%;
+    max-width: 44rem;
+  }
+  .ownership-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+  .ownership-description {
+    max-width: 60ch;
+  }
+}
+@media (max-width: 45rem) {
+  .landing .brand > span:last-child {
+    font-size: 1.125rem;
+    letter-spacing: 0.25em;
+  }
+  .landing .site-header {
+    padding-inline: 1.5rem;
+  }
+  .landing-hero {
+    padding-block: 2.5rem;
+  }
+  .hero-copy h1 {
+    margin-bottom: 1.5rem;
+  }
+  .hero-copy > p {
+    font-size: 1.5rem;
+  }
+  .hero-actions {
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .primary-link {
+    padding-inline: 1.25rem;
+    min-width: 0;
+  }
+  .repository-link {
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+  .diagram-languages {
+    gap: 0.5rem;
+    padding-inline: 0;
+    font-size: 0.8125rem;
+  }
+  .diagram-connections {
+    margin-inline: 0;
+  }
+  .application-boundary {
+    padding-inline: 0.875rem;
+  }
+  .application-heading {
+    font-size: 0.8125rem;
+  }
+  .application-heading .diagram-caption {
+    font-size: 0.875rem;
+    max-width: 9rem;
+  }
+  .runtime-mark {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .runtime-title {
+    white-space: normal;
+  }
+  .runtime-identity {
+    padding-inline: 0;
+    min-height: 7.5rem;
+    padding-bottom: 0;
+  }
+  .runtime-boundary {
+    padding-top: 1rem;
+  }
+  .storage-boundary .diagram-caption {
+    margin-left: 2.5rem;
+  }
+  .installation {
+    padding-block: 1.5rem 1rem;
+  }
+  .install-tabs {
+    gap: 0.5rem;
+    justify-content: space-between;
+  }
+  .install-tabs button {
+    min-width: 0;
+    font-size: 1rem;
+    padding-inline: 0.625rem;
+  }
+  .install-command {
+    padding-inline: 1rem;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+  }
+  .ownership {
+    padding-block: 2.5rem 3.5rem;
+  }
+  .ownership h2 {
+    font-size: 2.5rem;
+  }
+  .ownership-lead {
+    font-size: 1.5rem;
+  }
+  .ownership-description {
+    font-size: 1.5rem;
+  }
+  .capability-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+}

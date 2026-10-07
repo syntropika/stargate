@@ -12,7 +12,7 @@ All values are passed to the constructor. The library does not read environment 
 | `session.scopes` | Empty | Explicit host grants assigned to OIDC sessions |
 | `branding.app_name` | `Stargate` | Nonempty, at most 128 bytes, no control characters |
 | `branding.logo` | None | HTTPS URL; rendered with escaped attributes |
-| `branding.accent` | `#315cfd` | Six-digit hexadecimal color |
+| `branding.accent` | `#c4a882` | Six-digit hexadecimal color |
 | `branding.stylesheet` | None | HTTPS stylesheet URL on the same origin as `base_url`; loaded after the embedded CSS |
 | `max_body_bytes` | 65536 | Between 1 byte and 16 MiB |
 | `max_header_bytes` | 16384 | Between 1 byte and 1 MiB |

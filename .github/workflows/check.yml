@@ -20,3 +20,5 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - run: python -m venv .venv
       - run: PATH="$PWD/.venv/bin:$PATH" scripts/check.sh
+      - name: verify embedded frontend assets
+        run: git diff --exit-code -- crates/ui/assets

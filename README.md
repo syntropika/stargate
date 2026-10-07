@@ -113,9 +113,18 @@ scripts/check.sh
 
 This builds the native bindings and runs formatting, Clippy, Rust tests, storage migrations, concurrency checks, a mock OIDC flow, shared conformance tests across all four languages, framework integration tests and TypeScript declaration checks. Test databases use the system temporary directory; set `TMPDIR` to choose another location.
 
+The account panel uses React, TypeScript and Tailwind, built with Vite. Its compiled
+JavaScript and CSS are checked in and embedded by the `ui` crate. Installing or
+running Stargate does not require Node.js or a separate frontend server. See the
+[frontend development guide](docs/frontend.md) for build and preview commands.
+
 The workspace contains `core`, `http`, `storage`, `ui`, `rust`, `python`, `node` and `go`. Database adapters live inside `storage`, with optional Cargo features. Turso is enabled by the Rust host integration.
 
 ## Documentation
+
+The public landing and documentation site are built from `website/`. See the
+[website deployment guide](docs/website.md) for local development and the
+Cloudflare Workers pipeline.
 
 - [Build and integrate each language](docs/integrations.md)
 - [Package names and Trusted Publishing setup](docs/publishing.md)
