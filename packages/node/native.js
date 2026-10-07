@@ -11,6 +11,7 @@ if (fs.existsSync(local)) {
   if (process.platform === 'linux' && process.arch === 'x64' &&
       process.report.getReport().header.glibcVersionRuntime) target = 'linux-x64-gnu';
   if (process.platform === 'darwin' && process.arch === 'arm64') target = 'darwin-arm64';
+  if (process.platform === 'win32' && process.arch === 'x64') target = 'win32-x64-msvc';
   if (!target) throw new Error(`Stargate has no prebuilt binary for ${process.platform}/${process.arch}. Build from source: https://github.com/syntropika/stargate`);
   try {
     module.exports = require(`@syntropika/stargate-${target}`);

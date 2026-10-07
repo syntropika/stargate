@@ -6,7 +6,7 @@ Build Stargate from a checkout and mount it in your existing application. Run th
 
 The registry distribution is `syntropika-stargate`; its import remains `stargate`. The commands below build the local checkout.
 
-Build and install from this checkout in an active virtual environment:
+Build and install from this checkout in an active virtual environment. On Windows, run `python scripts/prepare-python-metadata.py` from the repository root first to materialize metadata if Git checked out symbolic links as ordinary files.
 
 ```sh
 python -m pip install maturin fastapi

@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -27,6 +31,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -41,7 +46,7 @@ jobs:
         env:
           PUBLISH: ${{ inputs.publish }}
         run: |
-          python3 - <<'PY'
+          python - <<'PY'
           import json, os, pathlib, tomllib
           version = tomllib.loads(pathlib.Path('Cargo.toml').read_text())['workspace']['package']['version']
           assert json.loads(pathlib.Path('packages/node/package.json').read_text())['version'] == version
@@ -49,12 +54,12 @@ jobs:
           if os.environ['PUBLISH'] == 'true':
               assert os.environ['GITHUB_REF'] == 'refs/tags/v' + version, 'Publish from the matching version tag'
           PY
-      - run: python3 -m venv .venv
+      - run: python -m venv .venv
       - run: PATH="$PWD/.venv/bin:$PATH" scripts/check.sh
       - name: Validate staged Rust workspace
         run: |
-          python3 scripts/prepare-release.py --only rust --output "$RUNNER_TEMP/release"
-          cargo check --workspace --manifest-path "$RUNNER_TEMP/release/rust/Cargo.toml"
+          python scripts/prepare-release.py --only rust --output "$RUNNER_TEMP/release"
+          CARGO_TARGET_DIR="$PWD/target" cargo check --workspace --manifest-path "$RUNNER_TEMP/release/rust/Cargo.toml"
 
   node-build:
     needs: validate
@@ -65,10 +70,17 @@ jobs:
             target: linux-x64-gnu
           - os: macos-14
             target: darwin-arm64
+          - os: windows-latest
+            target: win32-x64-msvc
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: native-${{ matrix.target }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -77,13 +89,13 @@ jobs:
           node-version: '24'
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libclang-dev
-      - run: python3 scripts/build-bindings.py --release
+      - run: python scripts/build-bindings.py --release
       - run: npm install --no-package-lock --no-audit --no-fund && npm test && npm run types
         working-directory: packages/node
       - name: Stage npm packages
-        run: python3 scripts/prepare-release.py --only node --output "$RUNNER_TEMP/release"
+        run: python scripts/prepare-release.py --only node --output "$RUNNER_TEMP/release"
       - name: Test installed npm tarballs
-        run: python3 scripts/check-node-package.py --packages "$RUNNER_TEMP/release/node"
+        run: python scripts/check-node-package.py --packages "$RUNNER_TEMP/release/node"
       - uses: actions/upload-artifact@v4
         with:
           name: node-${{ matrix.target }}
@@ -99,14 +111,20 @@ jobs:
             target: x86_64
           - os: macos-14
             target: aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: python scripts/prepare-python-metadata.py
       - uses: PyO3/maturin-action@v1
         with:
+          sccache: 'true'
           maturin-version: 'v1.12.6'
           target: ${{ matrix.target }}
           manylinux: '2_28'
@@ -158,6 +176,10 @@ jobs:
         with:
           name: node-darwin-arm64
           path: node
+      - uses: actions/download-artifact@v4
+        with:
+          name: node-win32-x64-msvc
+          path: node
       - name: Configure first-publication authentication
         if: inputs.bootstrap
         env:
@@ -169,6 +191,7 @@ jobs:
         run: |
           npm publish ./node/linux-x64-gnu --access public --provenance
           npm publish ./node/darwin-arm64 --access public --provenance
+          npm publish ./node/win32-x64-msvc --access public --provenance
           npm publish ./node/main --access public --provenance
 
   crates-publish:
@@ -183,7 +206,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update && sudo apt-get install -y libclang-dev
-      - run: python3 scripts/prepare-release.py --only rust --output "$RUNNER_TEMP/release"
+      - run: python scripts/prepare-release.py --only rust --output "$RUNNER_TEMP/release"
       - uses: rust-lang/crates-io-auth-action@v1
         if: ${{ !inputs.bootstrap }}
         id: auth

@@ -70,6 +70,8 @@ def stage_node(output):
         target, npm_os, npm_cpu, libc = "linux-x64-gnu", "linux", "x64", "glibc"
     elif system == "Darwin" and arch in ("arm64", "aarch64"):
         target, npm_os, npm_cpu, libc = "darwin-arm64", "darwin", "arm64", None
+    elif system == "Windows" and arch in ("x86_64", "amd64"):
+        target, npm_os, npm_cpu, libc = "win32-x64-msvc", "win32", "x64", None
     else:
         raise SystemExit("No prebuilt npm target configured for this platform")
     source = ROOT / "packages/node"
@@ -105,7 +107,7 @@ def stage_node(output):
     shutil.copy2(binary, native / binary.name)
     for folder in (main, native):
         shutil.copy2(ROOT / "LICENSE", folder / "LICENSE")
-        (folder / "README.md").write_text('# Stargate\n\nEmbedded authentication for Express.\n\n```sh\nnpm install @syntropika/stargate\n```\n\nSee [the integration guide](' + REPOSITORY + '/blob/main/docs/integrations.md#node--express) for configuration and usage.\n\nPrebuilt binaries support Linux x64 with glibc and macOS arm64. Other platforms require a source build.\n\nLicensed under Apache 2.0.\n')
+        (folder / "README.md").write_text('# Stargate\n\nEmbedded authentication for Express.\n\n```sh\nnpm install @syntropika/stargate\n```\n\nSee [the integration guide](' + REPOSITORY + '/blob/main/docs/integrations.md#node--express) for configuration and usage.\n\nPrebuilt binaries target Linux x64 with glibc, macOS arm64 and Windows x64. Other platforms require a source build.\n\nLicensed under Apache 2.0.\n')
     return main, native
 
 

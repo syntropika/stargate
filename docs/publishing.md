@@ -19,7 +19,7 @@ stargate = { package = "syntropika-stargate", version = "0.1" }
 
 The source workspace keeps its unprefixed package names. `scripts/prepare-release.py` stages a separate publishable workspace with registry names and versioned dependencies. The Rust integration depends on four supporting published crates: `syntropika-stargate-storage`, `syntropika-stargate-ui`, `syntropika-stargate-core` and `syntropika-stargate-http`. Storage adapters remain inside the storage crate.
 
-npm uses two optional native packages: `@syntropika/stargate-linux-x64-gnu` and `@syntropika/stargate-darwin-arm64`. The release workflow builds Linux x64 on Ubuntu 22.04 and macOS arm64. Linux Node binaries require glibc 2.35 or later. Python wheels use the CPython 3.10+ stable ABI, with manylinux 2.28 x64 and macOS arm64 builds. Other platforms require a source build. Registry publication is independent of the Git repository's visibility.
+npm uses three optional native packages: `@syntropika/stargate-linux-x64-gnu`, `@syntropika/stargate-darwin-arm64` and `@syntropika/stargate-win32-x64-msvc`. The release workflow builds Linux x64 on Ubuntu 22.04, macOS arm64 and Windows x64. Linux Node binaries require glibc 2.35 or later. Python wheels use the CPython 3.10+ stable ABI, with manylinux 2.28 x64, macOS arm64 and Windows x64 builds. Other platforms require a source build. Registry publication is independent of the Git repository's visibility.
 
 ## GitHub environments and secrets
 
@@ -29,7 +29,7 @@ The first publication requires these temporary environment secrets:
 
 | Environment | Secret | Value |
 | --- | --- | --- |
-| `npm` | `NPM_TOKEN` | A granular npm access token authorized to create and publish the three public packages in the `syntropika` npm organization, with permission to publish from CI without an interactive 2FA challenge |
+| `npm` | `NPM_TOKEN` | A granular npm access token authorized to create and publish the four public packages in the `syntropika` npm organization, with permission to publish from CI without an interactive 2FA challenge |
 | `crates-io` | `CARGO_REGISTRY_TOKEN` | A crates.io API token authorized to create and publish the five Stargate crates |
 | `pypi` | None | Configure a pending Trusted Publisher before the first release |
 
@@ -56,7 +56,7 @@ Open [PyPI Publishing](https://pypi.org/manage/account/publishing/) and add a **
 
 ### npm
 
-After the bootstrap publication, open each of the three npm packages and add a GitHub Trusted Publisher under **Settings → Trusted publishing**. Use the shared fields above and environment `npm`; allow direct `npm publish`. Complete the next successful publication within the registry's configuration validity window. The workflow installs npm 11, which supports OIDC publishing.
+After the bootstrap publication, open each of the four npm packages and add a GitHub Trusted Publisher under **Settings → Trusted publishing**. Use the shared fields above and environment `npm`; allow direct `npm publish`. Complete the next successful publication within the registry's configuration validity window. The workflow installs npm 11, which supports OIDC publishing.
 
 ### crates.io
 
