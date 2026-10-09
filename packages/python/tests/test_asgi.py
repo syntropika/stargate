@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import FastAPI, Request
-from stargate import OIDC, Auth, Turso
+from stargate import OIDC, Auth, Local, Turso
 from starlette.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
@@ -128,3 +128,44 @@ def test_starlette_protection(tmp_path):
     with TestClient(app, base_url="https://app.example.com") as client:
         assert client.get("/private").status_code == 401
         assert client.get("/auth/").status_code == 200
+
+
+def test_local_configuration_setup_and_password_rotation(tmp_path):
+    auth = Auth(
+        base_url="https://app.example.com",
+        storage=Turso(str(tmp_path / "local.db")),
+        local=Local(),
+    )
+    app = FastAPI()
+    auth.mount(app)
+    with TestClient(app, base_url="https://app.example.com") as client:
+        initial = client.get("/auth/api/local").json()
+        headers = {
+            "origin": "https://app.example.com",
+            "x-stargate-csrf": initial["csrf_token"],
+        }
+        assert (
+            client.post(
+                "/auth/api/local/setup",
+                json={"email": "admin@example.com", "password": "initial password 123"},
+                headers=headers,
+            ).status_code
+            == 201
+        )
+        me = client.get("/auth/api/me").json()
+        assert me["identity"]["claims"]["stargate"]["role"] == "administrator"
+        headers["x-stargate-csrf"] = me["csrf_token"]
+        old_cookie = client.cookies.get("__Host-stargate-session")
+        assert (
+            client.post(
+                "/auth/api/local/password",
+                json={
+                    "current_password": "initial password 123",
+                    "new_password": "replacement password 456",
+                },
+                headers=headers,
+            ).status_code
+            == 200
+        )
+        assert client.cookies.get("__Host-stargate-session") != old_cookie
+        assert client.get("/auth/api/users").status_code == 200

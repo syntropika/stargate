@@ -38,6 +38,11 @@ type SessionConfig struct {
 	TTLSeconds uint32   `json:"ttl_seconds,omitempty"`
 	Scopes     []string `json:"scopes,omitempty"`
 }
+type LocalConfig struct {
+	LoginAttempts      uint32  `json:"login_attempts,omitempty"`
+	LoginWindowSeconds uint32  `json:"login_window_seconds,omitempty"`
+	InitialAdminUserID *string `json:"initial_admin_user_id,omitempty"`
+}
 type BrandingConfig struct {
 	Stylesheet *string `json:"stylesheet,omitempty"`
 	AppName    string  `json:"app_name,omitempty"`
@@ -48,6 +53,7 @@ type Config struct {
 	BaseURL               string          `json:"base_url"`
 	Storage               TursoConfig     `json:"storage"`
 	OIDC                  []OIDC          `json:"oidc,omitempty"`
+	Local                 *LocalConfig    `json:"local,omitempty"`
 	PathPrefix            string          `json:"path_prefix,omitempty"`
 	Session               *SessionConfig  `json:"session,omitempty"`
 	Branding              *BrandingConfig `json:"branding,omitempty"`

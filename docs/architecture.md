@@ -14,7 +14,7 @@ host HTTP server -> framework adapter -> http -> core
 
 | Crate | Responsibility |
 | --- | --- |
-| `core` | Explicit validated configuration, identity, authorization, OIDC, sessions, API keys and structured audit events |
+| `core` | Explicit validated configuration, identity, authorization, OIDC, local credentials, administration, sessions, API keys and structured audit events |
 | `storage` | Engine-independent `AuthStore` contract and records, plus optional engine adapters, migrations and bounded MVCC retries |
 | `http` | HTTP-neutral requests/outcomes, account routing, cookies, CSRF and response hardening |
 | `ui` | Production HTML, CSS and JavaScript embedded at compile time |
@@ -41,9 +41,11 @@ WIT declares the resolved configuration; native constructors additionally accept
 
 ## Storage and concurrency
 
-The initial migration creates `users`, `identities`, `sessions`, `api_keys`, `oidc_transactions`, `audit_events` and their indexes. `schema_migrations` tracks the applied schema version. Startup rejects a newer schema and runs pending migration SQL in a transaction before opening the runtime.
+The initial migration creates `users`, `identities`, `sessions`, `api_keys`, `oidc_transactions`, `audit_events` and their indexes. `schema_migrations` tracks the applied schema version. Startup rejects a newer schema and runs pending migration SQL in a transaction before opening the runtime. Schema 2 adds user roles/status, `local_credentials`, and persistent `account_state` without recreating users or sessions.
 
 Operational writes use `BEGIN CONCURRENT` in MVCC mode. Each operation acquires a bounded concurrency permit and opens a separate connection. The whole transaction is retried only after rollback, with an exponential delay capped at 128 ms plus jitter. Default capacity is 16 connections and 32 retries. Configuration limits retries to at most 64. A failed commit never returns intermediate `RETURNING` rows. Generic Turso 0.8 MVCC conflict messages are recognized explicitly; arbitrary errors are never blindly retried.
+
+Local bootstrap, role/status updates and credential creation serialize through a persisted account-state row. Local login checks the verified password hash again within the session transaction. Password changes use compare-and-swap, revoke old sessions and create a replacement session atomically. A fresh role check inside administration transactions prevents concurrent demotion from preserving stale administrator privileges. Custom stores retain existing OIDC behavior through default unsupported local methods; enabling local accounts requires implementing the local-account contract.
 
 Tables maintain indexed lifecycle columns and a JSON record containing the remaining versioned metadata. Secret hashes are stored in both indexed fields and record data; full session/API key secrets are never stored. Lifecycle updates atomically update both representations. The database and its journal contain hashes, provider identity metadata and short-lived OIDC nonce/PKCE material.
 
@@ -51,6 +53,6 @@ Audit events are persisted and optionally passed to a Rust host callback. Storag
 
 ## Scope and future work
 
-v0.1 covers the embedded experience, generic OIDC authorization code flow, opaque sessions, API keys, scope checks, account UI and all four native integrations. No password authentication, MFA, WebAuthn, SAML, LDAP, organizations, billing, policy language, Redis, distributed sessions, PostgreSQL, MySQL or WASM runtime is implemented.
+The runtime covers the embedded experience, generic OIDC authorization code flow, local email/password accounts, administrator management, opaque sessions, API keys, scope checks, account UI and all four native integrations. Email verification, invitations, password recovery, MFA, WebAuthn, SAML, LDAP, organizations, billing, policy language, Redis, distributed sessions, PostgreSQL, MySQL and a WASM runtime remain future work.
 
 A future `stargate-d` binary can reuse the same core, HTTP, UI and store crates. A future `storage::adapters::postgres` module should implement `AuthStore`; a future WIT/WASM component can implement the same public world. Neither is on the v0.1 path. The project contains no AI, agent or model functionality.

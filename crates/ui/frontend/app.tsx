@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { LocalAccess, PasswordChange, type LocalStatus } from './local-access';
+import { UserManagement } from './user-management';
 
 export type Props = {
   prefix: string;
@@ -6,9 +8,15 @@ export type Props = {
   logo: string | null;
   providers: string[];
   page: string;
+  local?: boolean;
 };
-type Identity = { user_id: string; email: string | null; scopes: string[] };
-type Me = { identity: Identity; csrf_token: string; session_id: string };
+type Identity = {
+  user_id: string;
+  email: string | null;
+  scopes: string[];
+  claims?: { stargate?: { role?: string } };
+};
+type Me = { identity: Identity; csrf_token: string; session_id: string; local_password?: boolean };
 type Key = {
   id: string;
   name: string;
@@ -25,9 +33,15 @@ type LoadState = 'loading' | 'ready' | 'error';
 class ApiError extends Error {
   constructor(readonly status: number) {
     super(
-      status === 403
-        ? 'Access denied. Reload the page and try again.'
-        : 'The request could not be completed.',
+      status === 409
+        ? 'Cannot complete this change. The email may already be used, or the last administrator must remain active.'
+        : status === 429
+          ? 'Too many attempts. Wait a few minutes and try again.'
+          : status === 401
+            ? 'Your session ended. Reload the page to sign in again.'
+            : status === 403
+              ? 'Access denied. Reload the page and try again.'
+              : 'The request could not be completed.',
     );
   }
 }
@@ -92,7 +106,7 @@ function ResourceRow({
   );
 }
 
-export function App({ prefix, name, logo, providers, page }: Props) {
+export function App({ prefix, name, logo, providers, page, local = false }: Props) {
   const [me, setMe] = useState<Me | null>(null);
   const [notice, setNotice] = useState('');
   const [keys, setKeys] = useState<Key[]>([]);
@@ -101,7 +115,9 @@ export function App({ prefix, name, logo, providers, page }: Props) {
   const [busy, setBusy] = useState(false);
   const [accountState, setAccountState] = useState<LoadState>('loading');
   const [collectionState, setCollectionState] = useState<LoadState>('loading');
-  const view = ['profile', 'keys', 'sessions'].includes(page) ? page : 'profile';
+  const [localStatus, setLocalStatus] = useState<LocalStatus | null>(null);
+  const administrator = me?.identity.claims?.stargate?.role === 'administrator';
+  const view = ['profile', 'keys', 'sessions', 'users'].includes(page) ? page : 'profile';
 
   const api = useCallback(
     async (path: string, method = 'GET', body?: unknown) => {
@@ -124,7 +140,18 @@ export function App({ prefix, name, logo, providers, page }: Props) {
 
   useEffect(() => {
     let active = true;
-    fetch(prefix + '/api/me', { credentials: 'same-origin' })
+    Promise.all([
+      fetch(prefix + '/api/me', { credentials: 'same-origin' }),
+      local ? fetch(prefix + '/api/local', { credentials: 'same-origin' }) : Promise.resolve(null),
+    ])
+      .then(async ([account, configuration]) => {
+        if (configuration) {
+          if (!configuration.ok) throw new Error('Sign-in configuration could not be loaded.');
+          const status = await configuration.json();
+          if (active) setLocalStatus(status);
+        }
+        return account;
+      })
       .then(async (response) => {
         if (response.status === 401) return null;
         if (!response.ok) throw new Error('The account could not be loaded.');
@@ -145,7 +172,7 @@ export function App({ prefix, name, logo, providers, page }: Props) {
     return () => {
       active = false;
     };
-  }, [prefix]);
+  }, [prefix, local]);
 
   useEffect(() => {
     if (!me) return;
@@ -245,15 +272,17 @@ export function App({ prefix, name, logo, providers, page }: Props) {
       </header>
       {authenticated && (
         <nav className="account-navigation" aria-label="Account">
-          {['profile', 'keys', 'sessions'].map((item) => (
-            <a
-              key={item}
-              href={prefix + '/' + item}
-              aria-current={view === item ? 'page' : undefined}
-            >
-              {item === 'keys' ? 'API keys' : item[0].toUpperCase() + item.slice(1)}
-            </a>
-          ))}
+          {['profile', 'keys', 'sessions', ...(administrator && local ? ['users'] : [])].map(
+            (item) => (
+              <a
+                key={item}
+                href={prefix + '/' + item}
+                aria-current={view === item ? 'page' : undefined}
+              >
+                {item === 'keys' ? 'API keys' : item[0].toUpperCase() + item.slice(1)}
+              </a>
+            ),
+          )}
         </nav>
       )}
       <main className={authenticated ? 'account-shell' : 'account-shell anonymous-shell'}>
@@ -274,21 +303,31 @@ export function App({ prefix, name, logo, providers, page }: Props) {
           )}
           {accountState === 'ready' && !me && (
             <section id="login" className="account-view login-view">
-              <PageHeading title="Your account, connected.">
-                Sign in to manage your profile, API keys and sessions.
+              <PageHeading
+                title={
+                  localStatus?.setup_available
+                    ? 'Create administrator account'
+                    : 'Your account, connected.'
+                }
+              >
+                {localStatus?.setup_available
+                  ? 'The first completed account will manage users and access. Setup closes after this account is created.'
+                  : 'Sign in to manage your profile, API keys and sessions.'}
               </PageHeading>
+              {localStatus?.enabled && <LocalAccess prefix={prefix} status={localStatus} />}
               <div id="providers" className="provider-list">
-                {providers.map((provider) => (
-                  <a
-                    key={provider}
-                    className="provider"
-                    href={`${prefix}/login?provider=${encodeURIComponent(provider)}&return_to=${encodeURIComponent(prefix + '/profile')}`}
-                  >
-                    Continue with {provider}
-                  </a>
-                ))}
+                {!localStatus?.setup_available &&
+                  providers.map((provider) => (
+                    <a
+                      key={provider}
+                      className="provider"
+                      href={`${prefix}/login?provider=${encodeURIComponent(provider)}&return_to=${encodeURIComponent(prefix + '/profile')}`}
+                    >
+                      Continue with {provider}
+                    </a>
+                  ))}
               </div>
-              {!providers.length && (
+              {!providers.length && !local && (
                 <EmptyState title="Sign-in is not configured" headingLevel={2}>
                   Contact the service administrator to enable a sign-in provider.
                 </EmptyState>
@@ -315,8 +354,23 @@ export function App({ prefix, name, logo, providers, page }: Props) {
                   </div>
                 </dl>
               </section>
+              {me.local_password && <PasswordChange prefix={prefix} csrf={me.csrf_token} />}
             </section>
           )}
+          {authenticated &&
+            view === 'users' &&
+            (administrator && local ? (
+              <UserManagement api={api} prefix={prefix} currentUserId={me.identity.user_id} />
+            ) : (
+              <section className="account-view">
+                <PageHeading title="Access denied">
+                  Only administrators can manage users.
+                </PageHeading>
+                <a className="secondary-button" href={prefix + '/profile'}>
+                  Return to profile
+                </a>
+              </section>
+            ))}
           {authenticated && view === 'keys' && (
             <section id="keys" className="account-view">
               <PageHeading title="API keys">

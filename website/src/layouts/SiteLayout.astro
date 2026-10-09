@@ -2,7 +2,7 @@
 import '../styles/site.css';
 import mark from '../../../branding/mark.svg?raw';
 interface Props { title: string; description?: string; docs?: boolean; home?: boolean; }
-const { title, description = 'OIDC sign-in, sessions and API keys. One Rust runtime, embedded in your existing server.', docs = false, home = false } = Astro.props;
+const { title, description = 'Email/password or OIDC sign-in, sessions and API keys. One Rust runtime, embedded in your existing server.', docs = false, home = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>

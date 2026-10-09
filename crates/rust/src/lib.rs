@@ -8,11 +8,12 @@ use axum::{
 };
 use runtime_core::{AuditSink, Auth, Result};
 pub use runtime_core::{
-    AuthConfig, AuthType, BrandingConfig, Identity, IssuerUrl, OidcProviderConfig, Policy, Secret,
-    SessionConfig, StorageConfig, TursoConfig,
+    AuthConfig, AuthType, BrandingConfig, Identity, IssuerUrl, LocalConfig, OidcProviderConfig,
+    Policy, Secret, SessionConfig, StorageConfig, TursoConfig,
 };
 pub use runtime_http::{AuthOutcome, AuthRequest, AuthResponse, Runtime};
 use std::sync::Arc;
+pub use storage::UserRole;
 
 #[derive(Clone)]
 pub struct Stargate {

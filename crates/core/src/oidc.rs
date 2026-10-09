@@ -163,6 +163,8 @@ impl Auth {
             metadata: json!({"email_verified":claims.email_verified()}),
         };
         let new_user = User {
+            role: storage::UserRole::User,
+            disabled_at: None,
             id: random_token(),
             email: identity.email.clone(),
             created_at: now(),

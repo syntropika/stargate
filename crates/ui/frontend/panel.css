@@ -275,7 +275,8 @@
     gap: 0.5rem;
     font-size: 1rem;
   }
-  .form-field input {
+  .form-field :is(input, select),
+  .user-register select {
     width: 100%;
     min-width: 0;
     min-height: 3rem;
@@ -294,6 +295,26 @@
   .form-field small {
     color: var(--panel-muted);
     font-size: 0.875rem;
+  }
+  .local-form {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 34rem;
+  }
+  .local-form + .provider-list {
+    margin-top: 2rem;
+  }
+  .user-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .user-status input {
+    accent-color: var(--accent);
+    width: 1.25rem;
+    height: 1.25rem;
   }
   .form-actions {
     display: flex;
@@ -371,6 +392,25 @@
   .key-register .register-action button {
     border-color: transparent;
     padding-right: 0;
+  }
+  .user-register thead th:first-child {
+    width: 35%;
+  }
+  .user-register thead th:nth-child(2) {
+    width: 23%;
+  }
+  .user-register thead th:nth-child(3) {
+    width: 16%;
+  }
+  .user-register thead th:last-child {
+    width: 26%;
+  }
+  .user-register tbody th code {
+    overflow-wrap: anywhere;
+    font-size: 0.75rem;
+  }
+  .user-register .button-group {
+    justify-content: end;
   }
   .mobile-label {
     display: none;
@@ -478,6 +518,13 @@
       padding-top: 1.875rem;
     }
   }
+  .local-form .form-actions {
+    grid-column: auto;
+    padding-top: 0;
+  }
+  .local-form .form-actions button {
+    white-space: normal;
+  }
   @container account-content (max-width: 47.99rem) {
     .key-register,
     .key-register tbody {
@@ -514,6 +561,12 @@
     .key-register .register-action button {
       padding-right: 1rem;
       border-color: var(--panel-border);
+    }
+    .user-register .register-action {
+      grid-column: 1 / -1;
+    }
+    .user-register .button-group {
+      justify-content: start;
     }
     .mobile-label {
       display: block;
