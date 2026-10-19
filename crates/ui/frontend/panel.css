@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 @font-face {
+  font-family: 'Stargate Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('@fontsource-variable/geist/files/geist-latin-wght-normal.woff2') format('woff2');
+}
+@font-face {
   font-family: 'Stargate Mono';
   font-style: normal;
   font-weight: 100 800;
@@ -19,18 +26,22 @@
   :root {
     color-scheme: dark;
     --accent: #c4a882;
-    --panel-background: #0a0a0a;
-    --panel-surface: #141210;
-    --panel-border: #39322a;
-    --panel-input-border: #766957;
-    --panel-foreground: #f4f1ec;
-    --panel-body: #e8e3db;
-    --panel-muted: #9c9590;
+    --panel-background: #13120e;
+    --panel-surface: #191813;
+    --panel-raised: #201f19;
+    --panel-border: #323127;
+    --panel-input-border: #686251;
+    --panel-foreground: #f4f0e8;
+    --panel-body: #d9d4c9;
+    --panel-muted: #aaa79c;
+    --panel-success: #a6c7a4;
+    --panel-sans: 'Stargate Sans', system-ui, sans-serif;
     --panel-mono: 'Stargate Mono', monospace;
     --panel-serif: 'Stargate Serif', Georgia, serif;
-    font: 1rem/1.6 var(--panel-mono);
+    font: 1rem/1.6 var(--panel-sans);
     color: var(--panel-foreground);
     background: var(--panel-background);
+    scrollbar-color: #5b5849 var(--panel-background);
   }
   body {
     margin: 0;
@@ -42,10 +53,10 @@
 }
 @layer components {
   .account-app {
-    font-size: 1rem;
+    font-size: 0.875rem;
     min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 13.5rem minmax(0, 1fr);
   }
   .account-app a {
     color: var(--accent);
@@ -55,64 +66,75 @@
     margin: 0;
   }
   .account-app p {
-    font: 1.5rem/1.5 var(--panel-serif);
-    color: var(--panel-body);
+    font: 0.8125rem/1.65 var(--panel-sans);
+    color: var(--panel-muted);
   }
   .account-app h1 {
-    font: 400 3.5rem/1.1 var(--panel-serif);
-    letter-spacing: -0.02em;
+    font: 400 3.1875rem/1.1 var(--panel-serif);
+    letter-spacing: -0.035em;
     text-wrap: balance;
   }
   .account-app h2 {
     font: 400 1.875rem/1.2 var(--panel-serif);
   }
   .account-app h3 {
-    font: 500 1.375rem/1.3 var(--panel-serif);
+    font: 400 1.375rem/1.3 var(--panel-serif);
   }
   .account-app code {
     font-family: var(--panel-mono);
+    font-size: 0.75rem;
+  }
+  .account-app svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: none;
   }
   .account-app :is(button, .provider, .secondary-button) {
     display: inline-flex;
     justify-content: center;
     align-items: center;
+    gap: 0.625rem;
     min-height: 2.75rem;
-    padding: 0.65rem 1.25rem;
-    border: 1px solid var(--accent);
-    border-radius: 0.1875rem;
-    background: var(--accent);
+    padding: 0.6875rem 1.0625rem;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    background: var(--panel-foreground);
     color: var(--panel-background);
-    font: inherit;
+    font: 500 0.8125rem/1.4 var(--panel-sans);
     text-align: center;
     text-decoration: none;
     cursor: pointer;
   }
   .account-app :is(button, .provider, .secondary-button):hover:not(:disabled) {
-    filter: brightness(1.15);
-  }
-  .account-app :is(button, .provider, .secondary-button):active:not(:disabled) {
     filter: brightness(0.9);
   }
+  .account-app :is(button, .provider, .secondary-button):active:not(:disabled) {
+    transform: translateY(1px);
+  }
   .account-app button:disabled {
-    opacity: 0.55;
+    opacity: 0.5;
     cursor: not-allowed;
   }
   .account-app .secondary-button {
     background: transparent;
-    color: var(--accent);
+    border-color: var(--panel-input-border);
+    color: var(--panel-foreground);
   }
-  .account-app :is(button, a, input):focus-visible {
+  .account-app :is(button, a, input, select):focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 4px;
   }
   .account-app [hidden] {
     display: none !important;
   }
+  .account-app input {
+    caret-color: var(--accent);
+  }
   .skip-link {
-    position: absolute;
+    position: fixed;
     top: 1rem;
     left: 1.5rem;
-    z-index: 1;
+    z-index: 5;
     padding: 0.75rem;
     background: var(--panel-surface);
     transform: translateY(-200%);
@@ -120,92 +142,172 @@
   .skip-link:focus {
     transform: translateY(0);
   }
-  .brand-header {
+  .account-sidebar {
+    position: sticky;
+    top: 0;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 96rem;
-    margin-inline: auto;
-    padding: 1.25rem 5rem;
-    min-height: 5.5rem;
+    flex-direction: column;
+    min-width: 0;
+    height: 100dvh;
+    padding: 1.75rem 1.25rem 1.125rem;
+    border-right: 1px solid var(--panel-border);
+    background: #11100c;
+  }
+  .brand-header {
+    padding: 0 0.5rem;
+    margin-bottom: 2.5rem;
   }
   .brand-header .brand-lockup {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 0.625rem;
     min-width: 0;
     color: var(--panel-foreground);
     text-decoration: none;
   }
-  .brand-lockup span {
-    font-size: 1.125rem;
-    font-weight: 300;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
+  .brand-lockup > span {
+    font-size: 1.3125rem;
+    letter-spacing: -0.04em;
     overflow-wrap: anywhere;
   }
   .brand-header .logo {
-    width: 3rem;
-    height: 3rem;
+    width: 1.875rem;
+    height: 1.875rem;
     flex: none;
     object-fit: contain;
   }
-  .brand-header .sign-out {
-    border-color: transparent;
-    color: var(--panel-muted);
-    padding-right: 0;
-  }
   .account-navigation {
-    display: flex;
-    gap: 2.5rem;
-    width: 100%;
-    max-width: 96rem;
-    margin-inline: auto;
-    padding: 0 5rem;
-    border-block: 1px solid var(--panel-border);
+    display: grid;
+    gap: 0.25rem;
   }
   .account-navigation a {
     display: flex;
     align-items: center;
-    min-height: 4.375rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 0.75rem;
     color: var(--panel-muted);
     text-decoration: none;
+    border-radius: 2px;
+    font-size: 0.8125rem;
   }
   .account-navigation a:hover {
     color: var(--panel-foreground);
+    background: var(--panel-raised);
   }
   .account-navigation a[aria-current='page'] {
+    background: #252219;
+    color: var(--panel-foreground);
+  }
+  .account-navigation a[aria-current='page'] svg {
     color: var(--accent);
-    border-bottom-color: var(--accent);
+  }
+  .sidebar-account {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-top: auto;
+    padding: 1.125rem 0.375rem;
+    border-top: 1px solid var(--panel-border);
+  }
+  .account-avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.875rem;
+    height: 1.875rem;
+    border-radius: 50%;
+    background: var(--panel-raised);
+    color: var(--accent);
+    font-size: 0.6875rem;
+  }
+  .sidebar-account > div {
+    min-width: 0;
+    display: grid;
+    gap: 0.1875rem;
+  }
+  .sidebar-account > div > span {
+    font-size: 0.6875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sidebar-account small {
+    font-size: 0.625rem;
+    color: var(--panel-muted);
+  }
+  .account-sidebar .sign-out {
+    justify-content: start;
+    border: 0;
+    color: var(--panel-muted);
+    padding-left: 0.5rem;
+  }
+  .account-footer {
+    font-size: 0.6875rem;
+    color: var(--panel-muted);
+    padding: 0.75rem 0.5rem;
+  }
+  .account-workspace {
+    min-width: 0;
+  }
+  .account-topbar {
+    min-height: 4.375rem;
+    border-bottom: 1px solid var(--panel-border);
+    padding: 0.875rem 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    color: var(--panel-muted);
+    font-size: 0.75rem;
+  }
+  .account-topbar > span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    white-space: nowrap;
+  }
+  .account-topbar strong {
+    font-weight: 400;
+    color: var(--panel-foreground);
+  }
+  .account-topbar > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .account-shell {
     width: 100%;
-    max-width: 96rem;
-    margin: 3rem auto 3rem;
-    padding-inline: 5rem;
+    max-width: 88rem;
+    margin: 0 auto;
+    padding: 2.8125rem 2.5rem 4rem;
   }
   .account-content {
     min-width: 0;
-    container: account-content / inline-size;
+    container: account-content/inline-size;
   }
   .account-content:focus {
     outline: none;
   }
   .account-view {
     display: grid;
-    gap: 2.75rem;
+    gap: 2rem;
   }
   .page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .page-heading > div {
     display: grid;
     gap: 0.75rem;
   }
   .page-heading p {
     max-width: 70ch;
+  }
+  .page-heading > button {
+    flex: none;
   }
   .content-section {
     display: grid;
@@ -217,7 +319,8 @@
     gap: 0.5rem;
   }
   .section-heading p {
-    font-size: 1.25rem;
+    font-size: 0.8125rem;
+    max-width: 70ch;
   }
   .collection-heading {
     display: flex;
@@ -229,9 +332,37 @@
   .collection-heading h2 {
     flex: 1;
   }
+  .anonymous {
+    display: flex;
+    flex-direction: column;
+  }
+  .anonymous .account-sidebar {
+    display: contents;
+  }
+  .anonymous .brand-header {
+    order: 1;
+    width: 100%;
+    max-width: 82.5rem;
+    padding: 1.5rem 2.75rem;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .anonymous .account-workspace {
+    order: 2;
+    flex: 1;
+  }
+  .anonymous .account-footer {
+    order: 3;
+    max-width: 82.5rem;
+    width: 100%;
+    margin: auto auto 0;
+    padding: 1.5rem 2.75rem;
+    border-top: 1px solid var(--panel-border);
+  }
   .anonymous-shell {
-    max-width: 46rem;
-    margin-top: 5rem;
+    max-width: 38rem;
+    margin: 3rem auto;
+    padding-top: 2rem;
   }
   .provider-list {
     display: grid;
@@ -253,14 +384,171 @@
     grid-template-columns: 8rem minmax(0, 1fr);
     gap: 1.5rem;
     border-top: 1px solid var(--panel-border);
-    padding-block: 1.25rem;
+    padding-block: 1.125rem;
   }
   .identity-list dt {
     color: var(--panel-muted);
+    font-size: 0.75rem;
   }
   .identity-list dd {
     margin: 0;
     overflow-wrap: anywhere;
+  }
+  .key-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    border-block: 1px solid var(--panel-border);
+  }
+  .key-summary > div {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border-right: 1px solid var(--panel-border);
+  }
+  .key-summary > div:first-child {
+    padding-left: 0;
+  }
+  .key-summary > div:last-child {
+    border: 0;
+  }
+  .key-summary dd {
+    margin: 0;
+    font: 400 2rem/1.2 var(--panel-serif);
+  }
+  .key-summary dt {
+    color: var(--panel-muted);
+    font-size: 0.75rem;
+  }
+  .key-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .key-filters {
+    display: flex;
+    gap: 0.25rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .account-app .key-filters button {
+    background: transparent;
+    color: var(--panel-muted);
+    font-size: 0.75rem;
+    padding: 0.5rem 0.8125rem;
+  }
+  .account-app .key-filters button[aria-pressed='true'] {
+    background: var(--panel-raised);
+    color: var(--panel-foreground);
+  }
+  .key-search {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    min-height: 2.75rem;
+    width: min(100%, 15rem);
+    padding: 0 0.75rem;
+    border: 1px solid var(--panel-border);
+    color: var(--panel-muted);
+  }
+  .key-search input {
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--panel-foreground);
+    width: 100%;
+    min-width: 0;
+    outline-offset: 6px;
+  }
+  .key-search input::placeholder {
+    color: var(--panel-muted);
+  }
+  .key-search svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  .key-name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .key-name > span:last-child {
+    min-width: 0;
+  }
+  .key-symbol {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    background: var(--panel-raised);
+    color: var(--accent);
+  }
+  .key-symbol svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  .scope-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3125rem;
+  }
+  .scope-list code {
+    border: 1px solid var(--panel-border);
+    padding: 0.1875rem 0.375rem;
+    font-size: 0.625rem;
+    color: var(--panel-body);
+    overflow-wrap: anywhere;
+  }
+  .key-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--panel-border);
+    font-size: 0.6875rem;
+    color: var(--panel-muted);
+  }
+  .key-status.active {
+    color: var(--panel-success);
+    background: #1d241a;
+    border-color: #424c37;
+  }
+  .key-status.active:before {
+    content: '';
+    width: 0.3125rem;
+    height: 0.3125rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .key-guidance {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+    border-top: 1px solid var(--panel-border);
+    padding-top: 1.5rem;
+  }
+  .key-guidance > svg {
+    color: var(--accent);
+  }
+  .account-app .key-guidance h2 {
+    font: 400 0.875rem var(--panel-sans);
+    margin-bottom: 0.5rem;
+  }
+  .key-guidance p {
+    max-width: 70ch;
+    font-size: 0.75rem;
+  }
+  .create-key-section {
+    background: var(--panel-surface);
+    border: 1px solid var(--panel-border);
+    padding: 1.625rem;
   }
   .key-form {
     display: grid;
@@ -273,19 +561,20 @@
     align-content: start;
     min-width: 0;
     gap: 0.5rem;
-    font-size: 1rem;
+    font-size: 0.75rem;
   }
   .form-field :is(input, select),
   .user-register select {
     width: 100%;
     min-width: 0;
-    min-height: 3rem;
+    min-height: 2.75rem;
     border: 1px solid var(--panel-input-border);
-    border-radius: 0.1875rem;
-    padding: 0.65rem 0.875rem;
-    color: inherit;
-    background: var(--panel-surface);
+    border-radius: 2px;
+    padding: 0.625rem 0.75rem;
+    color: var(--panel-foreground);
+    background: var(--panel-background);
     font: inherit;
+    font-size: 0.8125rem;
     caret-color: var(--accent);
   }
   .form-field input::placeholder {
@@ -294,7 +583,7 @@
   }
   .form-field small {
     color: var(--panel-muted);
-    font-size: 0.875rem;
+    font-size: 0.6875rem;
   }
   .local-form {
     display: grid;
@@ -308,20 +597,22 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    min-height: 44px;
+    min-height: 2.75rem;
     cursor: pointer;
+    font-size: 0.75rem;
   }
   .user-status input {
     accent-color: var(--accent);
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
   .form-actions {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     align-items: start;
   }
   .form-actions button {
-    min-height: 3rem;
     white-space: nowrap;
   }
   .button-group {
@@ -334,12 +625,12 @@
     gap: 0.75rem;
     border: 1px solid var(--accent);
     padding: 1.5rem;
-    border-radius: 0.1875rem;
+    border-radius: 2px;
   }
   .secret-panel code {
     display: block;
     padding: 1rem;
-    background: var(--panel-surface);
+    background: var(--panel-background);
     overflow-wrap: anywhere;
   }
   .key-register {
@@ -349,41 +640,50 @@
     border-bottom: 1px solid var(--panel-border);
     text-align: left;
   }
+  .key-register thead {
+    background: var(--panel-surface);
+  }
   .key-register thead th {
-    padding: 0.5rem 1rem 0.75rem 0;
+    padding: 0.8125rem 0.75rem;
     color: var(--panel-muted);
-    font-size: 0.875rem;
+    font-size: 0.6875rem;
     font-weight: 400;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
   }
   .key-register thead th:first-child {
-    width: 33%;
+    width: 29%;
   }
   .key-register thead th:nth-child(2) {
-    width: 34%;
+    width: 27%;
   }
   .key-register thead th:nth-child(3) {
-    width: 21%;
+    width: 20%;
+  }
+  .key-register thead th:nth-child(4) {
+    width: 12%;
   }
   .key-register thead th:last-child {
     width: 12%;
   }
   .key-register tbody :is(th, td) {
-    padding: 1rem 1.5rem 1rem 0;
+    padding: 1.375rem 0.75rem;
     border-top: 1px solid var(--panel-border);
     vertical-align: middle;
     overflow-wrap: anywhere;
     font-weight: 400;
+    font-size: 0.75rem;
+  }
+  .key-register tbody th {
+    padding-left: 0;
   }
   .key-register tbody th strong {
     display: block;
-    font: 400 1.5rem/1.25 var(--panel-serif);
+    font: 400 0.875rem/1.4 var(--panel-sans);
   }
   .key-register tbody th code {
     display: block;
-    margin-top: 0.25rem;
+    margin-top: 0.375rem;
     color: var(--panel-muted);
+    font-size: 0.625rem;
   }
   .key-register .register-action {
     padding-right: 0;
@@ -391,26 +691,28 @@
   }
   .key-register .register-action button {
     border-color: transparent;
-    padding-right: 0;
+    padding-inline: 0.375rem;
+    color: var(--panel-muted);
+    font-size: 0.75rem;
   }
   .user-register thead th:first-child {
-    width: 35%;
+    width: 31%;
   }
   .user-register thead th:nth-child(2) {
-    width: 23%;
+    width: 24%;
   }
   .user-register thead th:nth-child(3) {
-    width: 16%;
+    width: 17%;
   }
   .user-register thead th:last-child {
-    width: 26%;
+    width: 28%;
   }
   .user-register tbody th code {
-    overflow-wrap: anywhere;
-    font-size: 0.75rem;
+    font-size: 0.625rem;
   }
   .user-register .button-group {
     justify-content: end;
+    gap: 0.375rem;
   }
   .mobile-label {
     display: none;
@@ -436,12 +738,13 @@
     overflow-wrap: anywhere;
   }
   .resource-details > strong {
-    font: 400 1.5rem/1.25 var(--panel-serif);
+    font: 400 0.9375rem var(--panel-sans);
   }
   .resource-meta {
     display: grid;
     gap: 0.25rem;
     color: var(--panel-muted);
+    font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
   }
   .resource-row > button {
@@ -451,7 +754,7 @@
     display: grid;
     gap: 0.5rem;
     border-block: 1px solid var(--panel-border);
-    padding-block: 1.5rem;
+    padding-block: 2rem;
   }
   .empty-state p {
     max-width: 70ch;
@@ -461,13 +764,17 @@
     padding: 1rem;
     margin-bottom: 1.5rem;
     border: 1px solid var(--panel-border);
-    border-radius: 0.1875rem;
+    border-radius: 2px;
     background: var(--panel-surface);
     color: var(--panel-foreground);
     overflow-wrap: anywhere;
+    font-size: 0.8125rem;
   }
-  .notice:empty {
+  .account-app .notice:empty {
     display: none;
+  }
+  .collection-error {
+    color: var(--panel-body);
   }
   .loading-state {
     display: grid;
@@ -484,7 +791,7 @@
     height: 1rem;
     max-width: 100%;
     background: var(--panel-surface);
-    border-radius: 0.125rem;
+    border-radius: 2px;
   }
   .loading-lines span:nth-child(2) {
     width: 85%;
@@ -492,30 +799,21 @@
   .loading-lines span:nth-child(3) {
     width: 60%;
   }
-  .account-footer {
-    width: 100%;
-    max-width: 96rem;
-    margin: auto auto 0;
-    padding: 1rem 5rem 2rem;
-    border-top: 1px solid var(--panel-border);
-    color: var(--panel-muted);
-    font-size: 0.875rem;
-  }
-  @container account-content (min-width: 48rem) {
+  @container account-content (min-width:48rem) {
     .key-form {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .form-actions {
-      grid-column: 1 / -1;
+      grid-column: 1/-1;
     }
   }
-  @container account-content (min-width: 70rem) {
+  @container account-content (min-width:70rem) {
     .key-form {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.95fr) auto;
     }
     .form-actions {
       grid-column: auto;
-      padding-top: 1.875rem;
+      padding-top: 1.75rem;
     }
   }
   .local-form .form-actions {
@@ -525,7 +823,18 @@
   .local-form .form-actions button {
     white-space: normal;
   }
-  @container account-content (max-width: 47.99rem) {
+  @container account-content (max-width:47.99rem) {
+    .page-heading {
+      align-items: start;
+      flex-direction: column;
+    }
+    .key-summary > div {
+      padding: 1rem 0.75rem;
+      gap: 0.625rem;
+    }
+    .key-summary dt {
+      font-size: 0.6875rem;
+    }
     .key-register,
     .key-register tbody {
       display: block;
@@ -540,7 +849,7 @@
     .key-register tbody tr {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 1rem;
+      gap: 0.875rem;
       border-top: 1px solid var(--panel-border);
       padding-block: 1.25rem;
     }
@@ -550,20 +859,20 @@
       padding: 0;
     }
     .key-register tbody th {
-      grid-column: 1 / -1;
+      grid-column: 1/-1;
     }
     .key-register tbody td:not(.register-action) {
-      grid-column: 1 / -1;
+      grid-column: 1/-1;
     }
     .key-register .register-action {
       grid-column: 2;
     }
     .key-register .register-action button {
-      padding-right: 1rem;
+      padding-inline: 0.875rem;
       border-color: var(--panel-border);
     }
     .user-register .register-action {
-      grid-column: 1 / -1;
+      grid-column: 1/-1;
     }
     .user-register .button-group {
       justify-content: start;
@@ -571,65 +880,95 @@
     .mobile-label {
       display: block;
       color: var(--panel-muted);
-      font-size: 0.875rem;
-      margin-bottom: 0.125rem;
+      font-size: 0.6875rem;
+      margin-bottom: 0.375rem;
     }
   }
-  @media (max-width: 60rem) {
-    .brand-header,
-    .account-navigation,
-    .account-shell,
-    .account-footer {
-      padding-inline: 2rem;
+  @media (max-width: 68.75rem) {
+    .account-app {
+      grid-template-columns: 11.25rem minmax(0, 1fr);
     }
-    .account-navigation {
-      gap: 1rem;
+    .account-sidebar {
+      padding-inline: 0.8125rem;
     }
-  }
-  @media (max-width: 37.5rem) {
-    .account-app p {
-      font-size: 1.25rem;
-    }
-    .brand-header,
-    .account-navigation,
-    .account-shell,
-    .account-footer {
-      padding-inline: 1.5rem;
-    }
-    .brand-header {
-      gap: 0.75rem;
-    }
-    .brand-header .brand-lockup {
-      gap: 0.75rem;
-    }
-    .brand-lockup span {
-      font-size: 0.875rem;
-      letter-spacing: 0.15em;
-    }
-    .brand-header .logo {
-      width: 2.5rem;
-      height: 2.5rem;
-    }
-    .brand-header .sign-out {
-      font-size: 0.875rem;
-      padding-inline: 0.25rem;
-    }
-    .account-navigation {
-      gap: 0;
-      justify-content: space-between;
-    }
-    .account-navigation a {
-      padding-inline: 0.5rem;
-      min-height: 3.5rem;
+    .brand-lockup > span {
+      font-size: 1.1875rem;
     }
     .account-shell {
-      margin-top: 2rem;
+      padding-inline: 1.75rem;
+    }
+    .account-topbar {
+      padding-inline: 1.75rem;
+    }
+  }
+  @media (max-width: 47.5rem) {
+    .account-app.authenticated {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .account-sidebar {
+      height: auto;
+      position: static;
+      gap: 0;
+      padding: 1.25rem 1.25rem 0;
+      border-right: 0;
+      border-bottom: 1px solid var(--panel-border);
+      background: var(--panel-background);
+    }
+    .brand-header {
+      margin-bottom: 1rem;
+      padding: 0;
+    }
+    .account-navigation {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .account-navigation a {
+      padding: 0.8125rem 0.6875rem;
+      white-space: nowrap;
+      font-size: 0.75rem;
+    }
+    .account-navigation svg {
+      width: 1rem;
+      height: 1rem;
+    }
+    .sidebar-account,
+    .account-sidebar .account-footer {
+      display: none;
+    }
+    .account-sidebar .sign-out {
+      position: absolute;
+      right: 1.25rem;
+      top: 1.0625rem;
+      font-size: 0.75rem;
+      gap: 0.375rem;
+    }
+    .account-sidebar .sign-out svg {
+      width: 1rem;
+      height: 1rem;
+    }
+    .brand-lockup {
+      max-width: calc(100% - 6rem);
+    }
+    .account-topbar {
+      min-height: 3rem;
+      padding: 0.625rem 1.4375rem;
+      font-size: 0.625rem;
+    }
+    .account-topbar > span:last-child {
+      max-width: 40%;
+    }
+    .account-shell {
+      padding: 1.8125rem 1.4375rem 3rem;
     }
     .account-view {
-      gap: 2rem;
+      gap: 1.5625rem;
     }
     .account-app h1 {
-      font-size: 2.5rem;
+      font-size: 2.6875rem;
+    }
+    .key-summary dd {
+      font-size: 1.75rem;
     }
     .identity-list > div {
       grid-template-columns: minmax(0, 1fr);
@@ -643,8 +982,46 @@
     .resource-details {
       flex-basis: 100%;
     }
-    .secret-panel {
-      padding: 1rem;
+    .secret-panel,
+    .create-key-section {
+      padding: 1.125rem;
     }
+    .anonymous .brand-header {
+      padding: 1.25rem 1.5rem;
+    }
+    .anonymous .brand-lockup {
+      max-width: none;
+    }
+    .anonymous .account-footer {
+      display: block;
+      padding: 1.5rem;
+    }
+    .anonymous-shell {
+      margin-top: 1.5rem;
+    }
+    .key-search {
+      width: 100%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .account-app * {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  @media (max-width: 47.5rem) {
+    .account-navigation a {
+      gap: 0.4375rem;
+      padding-inline: 0.5rem;
+      font-size: 0.6875rem;
+    }
+  }
+  .key-summary dd {
+    order: 0;
+  }
+  .key-summary dt {
+    order: 1;
   }
 }

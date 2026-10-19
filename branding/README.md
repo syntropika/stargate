@@ -14,10 +14,12 @@ add gradients, glow, texture or shadows. Use at least one quarter of the mark's
 width as surrounding clear space. Prefer the mark alone for small icons and
 favicons; keep it at least 24 pixels wide.
 
-The palette is near-black `#0a0a0a`, cream `#f4f1ec` and bronze `#c4a882`. Use
-`#9c9590` for readable secondary text on dark surfaces. The account panel and
-public website use EB Garamond for editorial headings and JetBrains Mono for
-identity, controls and technical values.
+The palette is warm charcoal `#13120e`, ivory `#f4f0e8` and bronze `#c4a882`. Use
+`#aaa79c` for readable secondary text on dark surfaces. The account panel and
+public website use EB Garamond for editorial headings, Geist for interface text,
+and JetBrains Mono for code and credential values. The public hero preserves the
+mark geometry as animated ASCII characters in bronze and ivory, with a static
+alternative for reduced motion.
 
 The outlined wordmarks use JetBrains Mono Light. Its SIL Open Font License is
 retained in `OFL-JetBrains-Mono.txt`. Generated concept images and operational

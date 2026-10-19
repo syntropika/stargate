@@ -43,7 +43,7 @@ under the existing Content Security Policy.
 
 ## Layout and branding
 
-Authenticated views share horizontal navigation on desktop and mobile. Profile, API keys, sessions and administrator Users remain distinct views. The key inventory precedes the creation form; the one-time secret appears inline
+Authenticated views share a persistent sidebar on desktop and a horizontal navigation strip on mobile. Profile, API keys, sessions and administrator Users remain distinct views. The key inventory supports name, prefix and scope searches with active/revoked filters. Summary counts are derived from the loaded credentials. The Create API key action opens the inline creation form after the inventory; the one-time secret appears inline
 after creation. Mobile registers reflow into labeled records. Lists show explicit
 loading, error and empty states. Unauthenticated visitors see enabled local sign-in and configured OIDC
 providers without account navigation. A fresh local installation shows the
@@ -57,7 +57,7 @@ override the panel. See [configuration](configuration.md) for branding settings.
 
 The default Stargate portal-and-star logo is served under the configured prefix
 at `/assets/stargate.svg` and is used as the favicon unless the host provides its
-own logo. EB Garamond and JetBrains Mono Latin variable fonts are embedded in the
+own logo. EB Garamond, Geist and JetBrains Mono Latin variable fonts are embedded in the
 CSS; the panel does not contact a font service. The Content Security Policy
 allows `data:` only for fonts, alongside same-origin font loading.
 

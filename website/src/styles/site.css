@@ -1,4 +1,11 @@
 @font-face {
+  font-family: 'Stargate Sans';
+  src: url('@fontsource-variable/geist/files/geist-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
   font-family: 'Stargate Mono';
   src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2')
     format('woff2');
@@ -16,16 +23,18 @@
 }
 :root {
   color-scheme: dark;
-  --ground: #0a0a0a;
-  --surface: #141210;
-  --ink: #f4f1ec;
-  --body: #e8e3db;
-  --muted: #9c9590;
+  scrollbar-gutter: stable;
+  --ground: #13120e;
+  --surface: #191813;
+  --ink: #f4f0e8;
+  --body: #d9d4c9;
+  --muted: #aaa79c;
   --accent: #c4a882;
-  --line: #39322a;
+  --line: #323127;
+  --sans: 'Stargate Sans', system-ui, sans-serif;
   --mono: 'Stargate Mono', monospace;
   --serif: 'Stargate Serif', Georgia, serif;
-  font: 1rem/1.65 var(--mono);
+  font: 1rem/1.65 var(--sans);
   background: var(--ground);
   color: var(--ink);
 }
@@ -52,6 +61,10 @@ a:hover {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
+}
+/* Navigation stays interactive while the article snapshot crossfades. */
+::view-transition {
+  pointer-events: none;
 }
 .skip-link {
   position: absolute;
@@ -132,142 +145,12 @@ a:hover {
 .site-footer a {
   text-decoration: none;
 }
-.docs-shell {
-  display: grid;
-  grid-template-columns: 16rem minmax(0, 1fr);
-  gap: 3rem;
-  max-width: 90rem;
-  width: 100%;
-  margin: 3rem auto 5rem;
-  padding-inline: 3rem;
-}
-.docs-navigation {
-  font-size: 0.875rem;
-}
-.docs-navigation-inner {
-  position: sticky;
-  top: 2rem;
-}
-.docs-navigation-title {
-  color: var(--ink);
-  padding-block: 0.75rem;
-  margin: 0;
-}
-.docs-navigation nav {
-  display: grid;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-}
-.docs-navigation a {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0.5rem 0.75rem;
-  border-left: 1px solid var(--line);
-  color: var(--muted);
-  text-decoration: none;
-}
-.docs-navigation a[aria-current] {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-.docs-toggle,
-.docs-navigation .docs-project-link {
-  display: none;
-}
-.docs-toggle {
-  width: 44px;
-  height: 44px;
-  padding: 10px;
-  background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  cursor: pointer;
-}
-.docs-toggle:hover {
-  color: var(--ink);
-  background: var(--surface);
-}
-.docs-toggle .menu-close,
-.docs-toggle[aria-expanded='true'] .menu-bars {
-  display: none;
-}
-.docs-toggle[aria-expanded='true'] .menu-close {
-  display: block;
-}
-.doc-content {
-  min-width: 0;
-  max-width: 75ch;
-  font: 1.125rem/1.8 var(--mono);
-  overflow-wrap: anywhere;
-}
-.doc-content h1 {
-  font: 400 3.5rem/1.15 var(--serif);
-  margin: 0 0 1.5rem;
-  letter-spacing: -0.02em;
-}
-.doc-content h2 {
-  font: 400 2rem/1.25 var(--serif);
-  margin: 3rem 0 1rem;
-}
-.doc-content h3 {
-  font: 500 1.5rem/1.3 var(--serif);
-  margin: 2rem 0 0.75rem;
-}
-.doc-content :is(p, ul, ol) {
-  margin: 0 0 1.25rem;
-}
-.doc-lead {
-  color: var(--body);
-}
-.doc-content code {
-  font-family: var(--mono);
-  font-size: 0.875em;
-}
-.doc-content :not(pre) > code {
-  color: var(--accent);
-}
-.doc-content pre {
-  overflow-x: auto;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  font: 0.875rem/1.75 var(--mono);
-}
-.doc-content pre code {
-  font-size: inherit;
-}
-.doc-content table {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-.doc-content :is(th, td) {
-  border-bottom: 1px solid var(--line);
-  padding: 0.75rem;
-  text-align: left;
-}
-.edit-link {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  margin-top: 3rem;
-  font-size: 0.8125rem;
-}
 .text-link {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
 }
 @media (max-width: 60rem) {
-  .docs-shell {
-    grid-template-columns: 12rem minmax(0, 1fr);
-    gap: 2rem;
-    padding-inline: 2rem;
-  }
   .site-header {
     padding-inline: 2rem;
   }
@@ -288,43 +171,6 @@ a:hover {
     width: 2.5rem;
     height: 2.5rem;
   }
-  .docs-shell {
-    grid-template-columns: minmax(0, 1fr);
-    margin-top: 1.5rem;
-    padding-inline: 1.5rem;
-  }
-  .docs-navigation-inner {
-    position: static;
-  }
-  .documentation.docs-menu-ready .site-header {
-    flex-wrap: nowrap;
-  }
-  .documentation.docs-menu-ready .site-header nav a {
-    display: none;
-  }
-  .documentation.docs-menu-ready .docs-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-  }
-  .docs-menu-ready .docs-navigation:not(.is-open) {
-    display: none;
-  }
-  .docs-navigation {
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--line);
-  }
-  .docs-navigation .docs-project-link {
-    display: flex;
-    margin-top: 0.75rem;
-  }
-  .doc-content {
-    font-size: 1rem;
-  }
-  .doc-content h1 {
-    font-size: 2.5rem;
-  }
   .site-footer {
     padding-inline: 1.5rem;
   }
@@ -336,4 +182,92 @@ a:hover {
 .not-found {
   margin: 4rem auto;
   padding: 0 1.5rem;
+}
+
+/* Shared public frame keeps the landing page and guides in one visual language. */
+:root {
+  scrollbar-color: #5b5849 var(--ground);
+}
+.site-frame {
+  width: min(100%, 82.5rem);
+  min-height: 100dvh;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  border-inline: 1px solid var(--line);
+}
+.site-header {
+  min-height: 5rem;
+  max-width: none;
+  padding: 1rem 2.75rem;
+}
+.brand {
+  gap: 0.625rem;
+}
+.brand-mark {
+  width: 1.875rem;
+  height: 1.875rem;
+}
+.brand > span:last-child {
+  font: 400 1.375rem var(--sans);
+  text-transform: none;
+  letter-spacing: -0.04em;
+}
+.site-header nav {
+  align-items: center;
+  gap: 1.75rem;
+  font-size: 0.8125rem;
+}
+.site-header nav .github-link {
+  gap: 0.5rem;
+}
+.github-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+.site-footer {
+  padding: 1.75rem 2.75rem;
+  font-size: 0.75rem;
+}
+@media (max-width: 60rem) {
+  .site-header {
+    padding-inline: 2rem;
+  }
+  .site-header nav {
+    gap: 1.25rem;
+  }
+}
+@media (max-width: 45rem) {
+  .site-frame {
+    border-inline: 0;
+  }
+  .site-header {
+    flex-wrap: nowrap;
+    padding: 1rem 1.5rem;
+    min-height: 4.25rem;
+  }
+  .brand-mark {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .brand > span:last-child {
+    font-size: 1.25rem;
+    letter-spacing: -0.04em;
+  }
+  .site-header nav {
+    gap: 1rem;
+  }
+  .site-header .integrations-link,
+  .site-header .github-link {
+    display: none;
+  }
+  .site-footer {
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
 }
