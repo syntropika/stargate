@@ -6,13 +6,14 @@ Consumer guides in `docs/` are the source of truth; edit them rather than
 duplicating content in the website. `src/lib/guides.ts` explicitly selects which
 guides are published and supplies their navigation labels. Maintainer guides,
 including this file, are excluded from the public routes and sitemap. Relative
-guide links are rewritten during the site build.
+guide links are rewritten during the site build. Internal navigation uses Astro ClientRouter with a short guide-content crossfade and reduced-motion support. `src/scripts/site.ts` initializes and disposes page controls around route changes; the installation and application-example selectors share one language selection across navigation.
 
 The landing page includes language-specific installation commands, a keyboard
 accessible language selector and copy controls. Go links to its source-build
-guide. The site generates a sitemap and robots file from the same documentation
+guide. The homepage uses an ASCII portal animation sampled from the original mark. Its pause control, reduced-motion still frame and offscreen suspension keep the effect optional.
+The site generates a sitemap and robots file from the same documentation
 collection. All fonts and browser assets are served from the website's origin.
-The EB Garamond and JetBrains Mono font license notices ship under `/licenses/`.
+The EB Garamond, Geist and JetBrains Mono font license notices ship under `/licenses/`.
 
 ## Local development
 

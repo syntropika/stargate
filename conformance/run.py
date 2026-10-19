@@ -349,19 +349,30 @@ def suite(runner, issuer, path):
                     "client_secret": "secret",
                 }
             ],
-            "session": {"ttl_seconds": 2},
+            # Allow login, callback replay and identity lookup before checking expiry.
+            "session": {"ttl_seconds": 10},
         },
     )
-    short_session, _ = login(runner)
+    short_session, short_me = login(runner)
+    short_cookie = [["cookie", short_session]]
     assert (
-        runner.call("handle", request("GET", "/private", [["cookie", short_session]]))[
-            "type"
-        ]
+        runner.call("handle", request("GET", "/private", short_cookie))["type"]
         == "continue"
     )
-    time.sleep(2.1)
+    sessions = payload(
+        response(
+            runner.call("handle", request("GET", "/auth/api/sessions", short_cookie)),
+            200,
+        )
+    )
+    expires_at = next(
+        session["expires_at"]
+        for session in sessions
+        if session["id"] == short_me["session_id"]
+    )
+    time.sleep(max(0, expires_at - time.time()) + 0.1)
     response(
-        runner.call("handle", request("GET", "/private", [["cookie", short_session]])),
+        runner.call("handle", request("GET", "/private", short_cookie)),
         401,
     )
     for file in path.parent.glob("*"):

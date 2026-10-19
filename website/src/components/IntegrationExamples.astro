@@ -1,0 +1,28 @@
+---
+import Code from 'astro/components/Code.astro';
+import Icon from './Icon.astro';
+import { integrations } from '../lib/integrations';
+
+const theme = {
+  name: 'stargate',
+  type: 'dark' as const,
+  colors: { 'editor.background': '#10100c', 'editor.foreground': '#ded9cb' },
+  settings: [
+    { scope: ['keyword', 'storage'], settings: { foreground: '#c4a882' } },
+    { scope: 'string', settings: { foreground: '#b8c6a5' } },
+    { scope: 'comment', settings: { foreground: '#aaa79c' } },
+  ],
+};
+---
+<div class="code-window" data-language-tabs>
+  <div class="example-tabs" role="tablist" aria-label="Example language">
+    {integrations.map(({ id, label }) => <button type="button" role="tab" id={`example-tab-${id}`} data-language={id} aria-controls={`example-${id}`} aria-selected={id === 'node'} tabindex={id === 'node' ? 0 : -1}>{label}</button>)}
+  </div>
+  <div class="example-panels">
+    {integrations.map(({ id, label, framework, filename, syntax, guide, code }) => <div class="code-panel" id={`example-${id}`} role="tabpanel" aria-labelledby={`example-tab-${id}`} hidden={id !== 'node'} tabindex="0">
+      <div class="code-title"><span>Your application</span><span>{filename}</span></div>
+      <Code code={code} lang={syntax} theme={theme} wrap={true} aria-label={`${label} integration example`} />
+      <div class="code-footer"><span>One Rust runtime</span><span>Embedded Turso</span><a href={`/docs/integrations/#${guide}`}>{framework} <Icon name="arrow" /></a></div>
+    </div>)}
+  </div>
+</div>

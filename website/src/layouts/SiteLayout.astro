@@ -1,17 +1,19 @@
 ---
 import '../styles/site.css';
 import mark from '../../../branding/mark.svg?raw';
+import Icon from '../components/Icon.astro';
+import { ClientRouter } from 'astro:transitions';
 interface Props { title: string; description?: string; docs?: boolean; home?: boolean; }
 const { title, description = 'Email/password or OIDC sign-in, sessions and API keys. One Rust runtime, embedded in your existing server.', docs = false, home = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#13120e" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/mark.svg" type="image/svg+xml" />
     <title>{title} · Stargate</title>
@@ -19,23 +21,25 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:type" content="website" />
+    <ClientRouter fallback="swap" />
   </head>
   <body class:list={{ landing: home, documentation: docs }}>
     <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="site-frame">
     <header class="site-header">
-      <a class="brand" href="/" aria-label="Stargate home"><span class="brand-mark" aria-hidden="true" set:html={mark} /><span>Stargate</span></a>
+      <a class="brand" href="/" aria-label="Stargate home"><span class="brand-mark" aria-hidden="true" set:html={mark} /><span>stargate</span></a>
       <nav aria-label="Main">
+        <a class="product-link" href={home ? '#capabilities' : '/#capabilities'}>Product</a>
+        <a class="integrations-link" href={home ? '#integration' : '/#integration'}>Integrations</a>
         <a href="/docs/" aria-current={docs ? 'page' : undefined}>Documentation</a>
-        <a href="https://github.com/syntropika/stargate">GitHub</a>
-        {docs && <button class="docs-toggle" type="button" aria-label="Open documentation navigation" aria-expanded="false" aria-controls="docs-navigation" hidden>
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-            <path class="menu-bars" d="M4 6h16M4 12h16M4 18h16" />
-            <path class="menu-close" d="m6 6 12 12M18 6 6 18" />
-          </svg>
-        </button>}
+        <a class="github-link" href="https://github.com/syntropika/stargate"><Icon name="github" /><span>GitHub</span></a>
       </nav>
     </header>
     <slot />
     <footer class="site-footer"><a href="https://syntropika.ai">By Syntropika</a><span>Open source · Apache 2.0</span><a href="https://github.com/syntropika/stargate/blob/main/LICENSE">License</a></footer>
+    </div>
   </body>
 </html>
+<script>
+  import '../scripts/site';
+</script>

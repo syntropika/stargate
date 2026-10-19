@@ -1,0 +1,17 @@
+---
+import Icon from './Icon.astro';
+---
+<figure class="ascii-portal" data-ascii-portal>
+  <div class="portal-artwork">
+    <img class="portal-fallback" src="/mark.svg" alt="Stargate portal mark" width="430" height="430" />
+    <canvas width="540" height="540" role="img" aria-label="Stargate portal formed from animated ASCII characters" hidden />
+  </div>
+  <figcaption class="portal-caption">
+    <span>Authentication, in process.</span>
+    <button class="portal-toggle" type="button" aria-label="Pause logo animation" aria-pressed="false" hidden>
+      <svg class="pause-symbol" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 3v12M12 3v12" /></svg>
+      <Icon name="play" />
+      <span>Pause animation</span>
+    </button>
+  </figcaption>
+</figure>

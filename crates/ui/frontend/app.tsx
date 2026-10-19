@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { Icon } from './icon';
 import { LocalAccess, PasswordChange, type LocalStatus } from './local-access';
 import { UserManagement } from './user-management';
 
@@ -28,6 +29,12 @@ type Key = {
 type Session = { id: string; created_at: number; expires_at: number; revoked_at: number | null };
 
 const date = (value: number) => new Date(value * 1000).toLocaleString();
+const keyStatus = (key: Key, now: number) =>
+  key.revoked_at !== null
+    ? 'Revoked'
+    : key.expires_at !== null && key.expires_at * 1000 <= now
+      ? 'Expired'
+      : 'Active';
 type LoadState = 'loading' | 'ready' | 'error';
 
 class ApiError extends Error {
@@ -46,11 +53,22 @@ class ApiError extends Error {
   }
 }
 
-function PageHeading({ title, children }: { title: string; children: ReactNode }) {
+function PageHeading({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <div className="page-heading">
-      <h1>{title}</h1>
-      <p>{children}</p>
+      <div>
+        <h1>{title}</h1>
+        <p>{children}</p>
+      </div>
+      {action}
     </div>
   );
 }
@@ -110,14 +128,58 @@ export function App({ prefix, name, logo, providers, page, local = false }: Prop
   const [me, setMe] = useState<Me | null>(null);
   const [notice, setNotice] = useState('');
   const [keys, setKeys] = useState<Key[]>([]);
+  const [now, setNow] = useState(Date.now);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [secret, setSecret] = useState('');
   const [busy, setBusy] = useState(false);
   const [accountState, setAccountState] = useState<LoadState>('loading');
   const [collectionState, setCollectionState] = useState<LoadState>('loading');
   const [localStatus, setLocalStatus] = useState<LocalStatus | null>(null);
+  const [keyFilter, setKeyFilter] = useState<'all' | 'active' | 'revoked'>('all');
+  const [keyQuery, setKeyQuery] = useState('');
+  const [showCreateKey, setShowCreateKey] = useState(false);
+  const createFormRef = useRef<HTMLFormElement>(null);
   const administrator = me?.identity.claims?.stargate?.role === 'administrator';
   const view = ['profile', 'keys', 'sessions', 'users'].includes(page) ? page : 'profile';
+  const activeKeys = keys.filter((key) => keyStatus(key, now) === 'Active');
+  const filteredKeys = keys.filter((key) => {
+    if (keyFilter === 'active' && keyStatus(key, now) !== 'Active') return false;
+    if (keyFilter === 'revoked' && key.revoked_at === null) return false;
+    return [key.name, key.prefix, ...key.scopes]
+      .join(' ')
+      .toLowerCase()
+      .includes(keyQuery.trim().toLowerCase());
+  });
+
+  useEffect(() => {
+    if (showCreateKey) createFormRef.current?.querySelector('input')?.focus();
+  }, [showCreateKey]);
+
+  useEffect(() => {
+    if (view !== 'keys') return;
+    const refresh = () => setNow(Date.now());
+    const nextExpiration = keys.reduce((next, key) => {
+      const expiration = key.expires_at === null ? Infinity : key.expires_at * 1000;
+      return key.revoked_at === null && expiration > now ? Math.min(next, expiration) : next;
+    }, Infinity);
+    // Browser timeout delays must fit a signed 32-bit integer.
+    const timer = Number.isFinite(nextExpiration)
+      ? window.setTimeout(
+          refresh,
+          Math.min(Math.max(0, nextExpiration - Date.now()), 2_147_483_647),
+        )
+      : undefined;
+    const onVisibilityChange = () => {
+      if (!document.hidden) refresh();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [keys, now, view]);
 
   const api = useCallback(
     async (path: string, method = 'GET', body?: unknown) => {
@@ -233,6 +295,8 @@ export function App({ prefix, name, logo, providers, page, local = false }: Prop
         expires_at: expires ? Math.floor(new Date(expires).getTime() / 1000) : null,
       });
       setSecret(result.secret);
+      setKeyFilter('all');
+      setKeyQuery('');
       form.reset();
       setKeys(await api('/api/keys'));
       setNotice('Key created. Copy the secret before closing this page.');
@@ -242,372 +306,526 @@ export function App({ prefix, name, logo, providers, page, local = false }: Prop
   const authenticated = accountState === 'ready' && me !== null;
 
   return (
-    <div className="account-app">
+    <div className={`account-app ${authenticated ? 'authenticated' : 'anonymous'}`}>
       <a className="skip-link" href="#account-content">
         Skip to content
       </a>
-      <header className="brand-header">
-        <a className="brand-lockup" href={prefix + '/'}>
-          <img className="logo" src={logo || prefix + '/assets/stargate.svg'} alt="" />
-          <span>{name}</span>
-        </a>
+      <aside className="account-sidebar">
+        <header className="brand-header">
+          <a className="brand-lockup" href={prefix + '/'}>
+            <img className="logo" src={logo || prefix + '/assets/stargate.svg'} alt="" />
+            <span>{name}</span>
+          </a>
+        </header>
         {authenticated && (
-          <button
-            id="logout"
-            className="secondary-button sign-out"
-            type="button"
-            disabled={busy}
-            onClick={() =>
-              action(async () => {
-                await api('/logout', 'POST');
-                setMe(null);
-                setSecret('');
-                setNotice('');
-              })
-            }
-          >
-            Sign out
-          </button>
-        )}
-      </header>
-      {authenticated && (
-        <nav className="account-navigation" aria-label="Account">
-          {['profile', 'keys', 'sessions', ...(administrator && local ? ['users'] : [])].map(
-            (item) => (
-              <a
-                key={item}
-                href={prefix + '/' + item}
-                aria-current={view === item ? 'page' : undefined}
-              >
-                {item === 'keys' ? 'API keys' : item[0].toUpperCase() + item.slice(1)}
-              </a>
-            ),
-          )}
-        </nav>
-      )}
-      <main className={authenticated ? 'account-shell' : 'account-shell anonymous-shell'}>
-        <div id="account-content" className="account-content" tabIndex={-1}>
-          <output id="notice" className="notice" aria-live="polite">
-            {notice}
-          </output>
-          {accountState === 'loading' && <LoadingState label="Loading your account…" />}
-          {accountState === 'error' && (
-            <section className="account-view">
-              <PageHeading title="Account unavailable">
-                Reload the page to try loading your account again.
-              </PageHeading>
-              <a className="secondary-button" href={prefix + '/' + view}>
-                Reload account
-              </a>
-            </section>
-          )}
-          {accountState === 'ready' && !me && (
-            <section id="login" className="account-view login-view">
-              <PageHeading
-                title={
-                  localStatus?.setup_available
-                    ? 'Create administrator account'
-                    : 'Your account, connected.'
-                }
-              >
-                {localStatus?.setup_available
-                  ? 'The first completed account will manage users and access. Setup closes after this account is created.'
-                  : 'Sign in to manage your profile, API keys and sessions.'}
-              </PageHeading>
-              {localStatus?.enabled && <LocalAccess prefix={prefix} status={localStatus} />}
-              <div id="providers" className="provider-list">
-                {!localStatus?.setup_available &&
-                  providers.map((provider) => (
-                    <a
-                      key={provider}
-                      className="provider"
-                      href={`${prefix}/login?provider=${encodeURIComponent(provider)}&return_to=${encodeURIComponent(prefix + '/profile')}`}
-                    >
-                      Continue with {provider}
-                    </a>
-                  ))}
-              </div>
-              {!providers.length && !local && (
-                <EmptyState title="Sign-in is not configured" headingLevel={2}>
-                  Contact the service administrator to enable a sign-in provider.
-                </EmptyState>
+          <>
+            <nav className="account-navigation" aria-label="Account">
+              {['profile', 'keys', 'sessions', ...(administrator && local ? ['users'] : [])].map(
+                (item) => (
+                  <a
+                    key={item}
+                    href={prefix + '/' + item}
+                    aria-current={view === item ? 'page' : undefined}
+                  >
+                    <Icon name={item} />
+                    <span>
+                      {item === 'keys' ? 'API keys' : item[0].toUpperCase() + item.slice(1)}
+                    </span>
+                  </a>
+                ),
               )}
-            </section>
-          )}
-          {authenticated && view === 'profile' && (
-            <section id="profile" className="account-view">
-              <PageHeading title="Profile">Your account identity and access scopes.</PageHeading>
-              <section className="content-section" aria-labelledby="identity-heading">
-                <h2 id="identity-heading">Account details</h2>
-                <dl id="identity" className="identity-list">
-                  <div>
-                    <dt>User</dt>
-                    <dd>{me.identity.user_id}</dd>
-                  </div>
-                  <div>
-                    <dt>Email</dt>
-                    <dd>{me.identity.email || 'Not provided'}</dd>
-                  </div>
-                  <div>
-                    <dt>Scopes</dt>
-                    <dd>{me.identity.scopes.join(', ') || 'None'}</dd>
-                  </div>
-                </dl>
-              </section>
-              {me.local_password && <PasswordChange prefix={prefix} csrf={me.csrf_token} />}
-            </section>
-          )}
-          {authenticated &&
-            view === 'users' &&
-            (administrator && local ? (
-              <UserManagement api={api} prefix={prefix} currentUserId={me.identity.user_id} />
-            ) : (
+            </nav>
+            <div className="sidebar-account">
+              <span className="account-avatar" aria-hidden="true">
+                {(me.identity.email || name).slice(0, 2).toUpperCase()}
+              </span>
+              <div>
+                <span>{me.identity.email || me.identity.user_id}</span>
+                <small>{administrator ? 'Administrator' : 'Your account'}</small>
+              </div>
+            </div>
+            <button
+              id="logout"
+              className="secondary-button sign-out"
+              type="button"
+              disabled={busy}
+              onClick={() =>
+                action(async () => {
+                  await api('/logout', 'POST');
+                  setMe(null);
+                  setSecret('');
+                  setNotice('');
+                })
+              }
+            >
+              <Icon name="logout" /> Sign out
+            </button>
+          </>
+        )}
+        <footer className="account-footer">Secured by Stargate</footer>
+      </aside>
+      <div className="account-workspace">
+        {authenticated && (
+          <header className="account-topbar">
+            <span>
+              Your account <span aria-hidden="true">/</span>{' '}
+              <strong>
+                {view === 'keys' ? 'API keys' : view[0].toUpperCase() + view.slice(1)}
+              </strong>
+            </span>
+            <span>{me.identity.email || me.identity.user_id}</span>
+          </header>
+        )}
+        <main className={authenticated ? 'account-shell' : 'account-shell anonymous-shell'}>
+          <div id="account-content" className="account-content" tabIndex={-1}>
+            <output id="notice" className="notice" aria-live="polite">
+              {notice}
+            </output>
+            {accountState === 'loading' && <LoadingState label="Loading your account…" />}
+            {accountState === 'error' && (
               <section className="account-view">
-                <PageHeading title="Access denied">
-                  Only administrators can manage users.
+                <PageHeading title="Account unavailable">
+                  Reload the page to try loading your account again.
                 </PageHeading>
-                <a className="secondary-button" href={prefix + '/profile'}>
-                  Return to profile
+                <a className="secondary-button" href={prefix + '/' + view}>
+                  Reload account
                 </a>
               </section>
-            ))}
-          {authenticated && view === 'keys' && (
-            <section id="keys" className="account-view">
-              <PageHeading title="API keys">
-                Create credentials for your apps. Each secret is shown once.
-              </PageHeading>
-              <section
-                className="content-section collection-section"
-                aria-labelledby="key-list-heading"
-                aria-busy={collectionState === 'loading'}
-              >
-                <h2 id="key-list-heading">Your keys</h2>
-                {collectionState === 'loading' ? (
-                  <LoadingState label="Loading API keys…" />
-                ) : collectionState === 'error' ? (
-                  <p className="collection-error">
-                    API keys could not be loaded. <a href={prefix + '/keys'}>Reload API keys</a>
-                  </p>
-                ) : keys.length ? (
-                  <table id="key-list" className="key-register">
-                    <thead>
-                      <tr>
-                        <th scope="col">Name / prefix</th>
-                        <th scope="col">Scopes</th>
-                        <th scope="col">Expiration</th>
-                        <th scope="col">
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {keys.map((key) => (
-                        <tr key={key.id}>
-                          <th scope="row">
-                            <strong>{key.name}</strong>
-                            <code>{key.prefix}…</code>
+            )}
+            {accountState === 'ready' && !me && (
+              <section id="login" className="account-view login-view">
+                <PageHeading
+                  title={
+                    localStatus?.setup_available
+                      ? 'Create administrator account'
+                      : 'Your account, connected.'
+                  }
+                >
+                  {localStatus?.setup_available
+                    ? 'The first completed account will manage users and access. Setup closes after this account is created.'
+                    : 'Sign in to manage your profile, API keys and sessions.'}
+                </PageHeading>
+                {localStatus?.enabled && <LocalAccess prefix={prefix} status={localStatus} />}
+                <div id="providers" className="provider-list">
+                  {!localStatus?.setup_available &&
+                    providers.map((provider) => (
+                      <a
+                        key={provider}
+                        className="provider"
+                        href={`${prefix}/login?provider=${encodeURIComponent(provider)}&return_to=${encodeURIComponent(prefix + '/profile')}`}
+                      >
+                        Continue with {provider}
+                      </a>
+                    ))}
+                </div>
+                {!providers.length && !local && (
+                  <EmptyState title="Sign-in is not configured" headingLevel={2}>
+                    Contact the service administrator to enable a sign-in provider.
+                  </EmptyState>
+                )}
+              </section>
+            )}
+            {authenticated && view === 'profile' && (
+              <section id="profile" className="account-view">
+                <PageHeading title="Profile">Your account identity and access scopes.</PageHeading>
+                <section className="content-section" aria-labelledby="identity-heading">
+                  <h2 id="identity-heading">Account details</h2>
+                  <dl id="identity" className="identity-list">
+                    <div>
+                      <dt>User</dt>
+                      <dd>{me.identity.user_id}</dd>
+                    </div>
+                    <div>
+                      <dt>Email</dt>
+                      <dd>{me.identity.email || 'Not provided'}</dd>
+                    </div>
+                    <div>
+                      <dt>Scopes</dt>
+                      <dd>{me.identity.scopes.join(', ') || 'None'}</dd>
+                    </div>
+                  </dl>
+                </section>
+                {me.local_password && <PasswordChange prefix={prefix} csrf={me.csrf_token} />}
+              </section>
+            )}
+            {authenticated &&
+              view === 'users' &&
+              (administrator && local ? (
+                <UserManagement api={api} prefix={prefix} currentUserId={me.identity.user_id} />
+              ) : (
+                <section className="account-view">
+                  <PageHeading title="Access denied">
+                    Only administrators can manage users.
+                  </PageHeading>
+                  <a className="secondary-button" href={prefix + '/profile'}>
+                    Return to profile
+                  </a>
+                </section>
+              ))}
+            {authenticated && view === 'keys' && (
+              <section id="keys" className="account-view">
+                <PageHeading
+                  title="API keys"
+                  action={
+                    <button
+                      type="button"
+                      disabled={busy || collectionState !== 'ready'}
+                      onClick={() => setShowCreateKey(true)}
+                    >
+                      <Icon name="plus" />
+                      Create API key
+                    </button>
+                  }
+                >
+                  Credentials for your applications. Scoped to what they need.
+                </PageHeading>
+                {collectionState === 'ready' && (
+                  <dl className="key-summary" aria-label="API key summary">
+                    <div>
+                      <dt>Active keys</dt>
+                      <dd>{activeKeys.length.toString().padStart(2, '0')}</dd>
+                    </div>
+                    <div>
+                      <dt>Revoked keys</dt>
+                      <dd>
+                        {keys
+                          .filter((key) => key.revoked_at !== null)
+                          .length.toString()
+                          .padStart(2, '0')}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>With expiration</dt>
+                      <dd>
+                        {activeKeys
+                          .filter((key) => key.expires_at !== null)
+                          .length.toString()
+                          .padStart(2, '0')}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
+                <section
+                  className="content-section collection-section"
+                  aria-labelledby="key-list-heading"
+                  aria-busy={collectionState === 'loading'}
+                >
+                  <h2 id="key-list-heading" className="sr-only">
+                    Your keys
+                  </h2>
+                  {collectionState === 'ready' && keys.length > 0 && (
+                    <div className="key-toolbar">
+                      <fieldset className="key-filters">
+                        <legend className="sr-only">Filter API keys</legend>
+                        {(['all', 'active', 'revoked'] as const).map((filter) => (
+                          <button
+                            key={filter}
+                            type="button"
+                            aria-pressed={keyFilter === filter}
+                            onClick={() => setKeyFilter(filter)}
+                          >
+                            {filter === 'all'
+                              ? 'All keys'
+                              : filter === 'active'
+                                ? 'Active'
+                                : 'Revoked'}
+                          </button>
+                        ))}
+                      </fieldset>
+                      <label className="key-search">
+                        <Icon name="search" />
+                        <span className="sr-only">Search API keys</span>
+                        <input
+                          type="search"
+                          value={keyQuery}
+                          placeholder="Search keys…"
+                          onChange={(event) => setKeyQuery(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  {collectionState === 'loading' ? (
+                    <LoadingState label="Loading API keys…" />
+                  ) : collectionState === 'error' ? (
+                    <p className="collection-error">
+                      API keys could not be loaded. <a href={prefix + '/keys'}>Reload API keys</a>
+                    </p>
+                  ) : filteredKeys.length ? (
+                    <table id="key-list" className="key-register">
+                      <thead>
+                        <tr>
+                          <th scope="col">Name / prefix</th>
+                          <th scope="col">Scopes</th>
+                          <th scope="col">Expiration</th>
+                          <th scope="col">Status</th>
+                          <th scope="col">
+                            <span className="sr-only">Actions</span>
                           </th>
-                          <td>
-                            <span className="mobile-label">Scopes</span>
-                            <code>{key.scopes.join(' ') || 'No scopes'}</code>
-                          </td>
-                          <td>
-                            <span className="mobile-label">Expiration</span>
-                            {key.expires_at ? date(key.expires_at) : 'No expiration'}
-                          </td>
-                          <td className="register-action">
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredKeys.map((key) => (
+                          <tr key={key.id}>
+                            <th scope="row" aria-label={key.name}>
+                              <span className="key-name">
+                                <span className="key-symbol">
+                                  <Icon name="keys" />
+                                </span>
+                                <span>
+                                  <strong>{key.name}</strong>
+                                  <code>{key.prefix}…</code>
+                                </span>
+                              </span>
+                            </th>
+                            <td>
+                              <span className="mobile-label">Scopes</span>
+                              <span className="scope-list">
+                                {key.scopes.length ? (
+                                  key.scopes.map((scope) => <code key={scope}>{scope}</code>)
+                                ) : (
+                                  <code>No scopes</code>
+                                )}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="mobile-label">Expiration</span>
+                              {key.expires_at ? date(key.expires_at) : 'No expiration'}
+                            </td>
+                            <td>
+                              <span className="mobile-label">Status</span>
+                              <span
+                                className={`key-status ${keyStatus(key, now) === 'Active' ? 'active' : ''}`}
+                              >
+                                {keyStatus(key, now)}
+                              </span>
+                            </td>
+                            <td className="register-action">
+                              <button
+                                className="secondary-button"
+                                type="button"
+                                aria-label={
+                                  key.revoked_at !== null
+                                    ? `${key.name} is revoked`
+                                    : `Revoke ${key.name}`
+                                }
+                                disabled={busy || key.revoked_at !== null}
+                                onClick={() => {
+                                  if (confirm(`Revoke ${key.name}?`))
+                                    action(async () => {
+                                      await api('/api/keys/' + key.id, 'DELETE');
+                                      setKeys(await api('/api/keys'));
+                                    });
+                                }}
+                              >
+                                {key.revoked_at !== null ? 'Revoked' : 'Revoke'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <EmptyState title={keys.length ? 'No matching keys' : 'No API keys yet'}>
+                      {keys.length
+                        ? 'Try a different search or filter.'
+                        : 'Create a key to connect an app to your account.'}
+                    </EmptyState>
+                  )}
+                </section>
+                <section
+                  className="content-section create-key-section"
+                  aria-labelledby="create-key-heading"
+                  hidden={!showCreateKey}
+                >
+                  <div className="section-heading">
+                    <h2 id="create-key-heading">Create a key</h2>
+                    <p>Choose a name, the scopes you need, and an optional expiration date.</p>
+                  </div>
+                  <form
+                    ref={createFormRef}
+                    id="create-key"
+                    className="key-form"
+                    onSubmit={createKey}
+                    aria-busy={busy}
+                  >
+                    <label className="form-field">
+                      Name
+                      <input
+                        name="name"
+                        required
+                        maxLength={128}
+                        placeholder="Development laptop"
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className="form-field">
+                      Scopes
+                      <input
+                        name="scopes"
+                        placeholder="projects:read projects:write"
+                        aria-describedby="scope-help"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                      />
+                      <small id="scope-help">Separate scopes with spaces.</small>
+                    </label>
+                    <label className="form-field">
+                      Expires at (optional)
+                      <input name="expires" type="datetime-local" />
+                    </label>
+                    <div className="form-actions">
+                      <button type="submit" disabled={busy}>
+                        Create key
+                      </button>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setShowCreateKey(false);
+                          setSecret('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                  {secret && (
+                    <section
+                      id="new-secret"
+                      className="secret-panel"
+                      aria-labelledby="secret-heading"
+                    >
+                      <h3 id="secret-heading">Your new key</h3>
+                      <p>Copy this key now. It will not be shown again.</p>
+                      <code id="secret">{secret}</code>
+                      <div className="button-group">
+                        <button
+                          id="copy-secret"
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            action(async () => {
+                              await navigator.clipboard.writeText(secret);
+                              setNotice('Key copied.');
+                            })
+                          }
+                        >
+                          Copy key
+                        </button>
+                        <button
+                          id="dismiss-secret"
+                          className="secondary-button"
+                          type="button"
+                          onClick={() => setSecret('')}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </section>
+                  )}
+                </section>
+                <aside className="key-guidance">
+                  <Icon name="shield" />
+                  <div>
+                    <h2>A small key. A clear boundary.</h2>
+                    <p>
+                      Grant only the scopes an application needs. Secrets are shown once and stored
+                      as hashes. Revoke a key when you no longer need it.
+                    </p>
+                  </div>
+                </aside>
+              </section>
+            )}
+            {authenticated && view === 'sessions' && (
+              <section id="sessions" className="account-view">
+                <PageHeading title="Sessions">
+                  Review your sign-ins and revoke access you no longer need.
+                </PageHeading>
+                <section
+                  className="content-section"
+                  aria-labelledby="session-list-heading"
+                  aria-busy={collectionState === 'loading'}
+                >
+                  <div className="collection-heading">
+                    <h2 id="session-list-heading">Your sessions</h2>
+                    <button
+                      id="revoke-all"
+                      className="secondary-button"
+                      type="button"
+                      disabled={
+                        busy ||
+                        collectionState !== 'ready' ||
+                        !sessions.some((session) => session.revoked_at === null)
+                      }
+                      onClick={() => {
+                        if (confirm('Revoke every session, including this one?'))
+                          action(async () => {
+                            await api('/api/sessions', 'DELETE');
+                            setMe(null);
+                            setSecret('');
+                          });
+                      }}
+                    >
+                      Revoke all sessions
+                    </button>
+                  </div>
+                  {collectionState === 'loading' ? (
+                    <LoadingState label="Loading sessions…" />
+                  ) : collectionState === 'error' ? (
+                    <p className="collection-error">
+                      Sessions could not be loaded.{' '}
+                      <a href={prefix + '/sessions'}>Reload sessions</a>
+                    </p>
+                  ) : sessions.length ? (
+                    <ul id="session-list" className="resource-list">
+                      {sessions.map((session) => (
+                        <ResourceRow
+                          key={session.id}
+                          title={session.id === me.session_id ? 'Current session' : 'Session'}
+                          action={
                             <button
                               className="secondary-button"
                               type="button"
                               aria-label={
-                                key.revoked_at !== null
-                                  ? `${key.name} is revoked`
-                                  : `Revoke ${key.name}`
+                                session.revoked_at !== null
+                                  ? 'Session is revoked'
+                                  : session.id === me.session_id
+                                    ? 'Revoke current session'
+                                    : `Revoke session created ${date(session.created_at)}`
                               }
-                              disabled={busy || key.revoked_at !== null}
+                              disabled={busy || session.revoked_at !== null}
                               onClick={() => {
-                                if (confirm(`Revoke ${key.name}?`))
+                                if (confirm('Revoke this session?'))
                                   action(async () => {
-                                    await api('/api/keys/' + key.id, 'DELETE');
-                                    setKeys(await api('/api/keys'));
+                                    await api('/api/sessions/' + session.id, 'DELETE');
+                                    if (session.id === me.session_id) {
+                                      setMe(null);
+                                      setSecret('');
+                                    } else setSessions(await api('/api/sessions'));
                                   });
                               }}
                             >
-                              {key.revoked_at !== null ? 'Revoked' : 'Revoke'}
+                              {session.revoked_at !== null ? 'Revoked' : 'Revoke'}
                             </button>
-                          </td>
-                        </tr>
+                          }
+                        >
+                          <span>Created {date(session.created_at)}</span>
+                          <span>Expires {date(session.expires_at)}</span>
+                        </ResourceRow>
                       ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <EmptyState title="No API keys yet">
-                    Create a key below to connect an app to your account.
-                  </EmptyState>
-                )}
+                    </ul>
+                  ) : (
+                    <EmptyState title="No sessions yet">
+                      Your sign-in sessions will appear here.
+                    </EmptyState>
+                  )}
+                </section>
               </section>
-              <section className="content-section" aria-labelledby="create-key-heading">
-                <div className="section-heading">
-                  <h2 id="create-key-heading">Create a key</h2>
-                  <p>Choose a name, the scopes you need, and an optional expiration date.</p>
-                </div>
-                <form id="create-key" className="key-form" onSubmit={createKey} aria-busy={busy}>
-                  <label className="form-field">
-                    Name
-                    <input
-                      name="name"
-                      required
-                      maxLength={128}
-                      placeholder="Development laptop"
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label className="form-field">
-                    Scopes
-                    <input
-                      name="scopes"
-                      placeholder="projects:read projects:write"
-                      aria-describedby="scope-help"
-                      autoCapitalize="none"
-                      spellCheck={false}
-                    />
-                    <small id="scope-help">Separate scopes with spaces.</small>
-                  </label>
-                  <label className="form-field">
-                    Expires at (optional)
-                    <input name="expires" type="datetime-local" />
-                  </label>
-                  <div className="form-actions">
-                    <button type="submit" disabled={busy}>
-                      Create key
-                    </button>
-                  </div>
-                </form>
-                {secret && (
-                  <section
-                    id="new-secret"
-                    className="secret-panel"
-                    aria-labelledby="secret-heading"
-                  >
-                    <h3 id="secret-heading">Your new key</h3>
-                    <p>Copy this key now. It will not be shown again.</p>
-                    <code id="secret">{secret}</code>
-                    <div className="button-group">
-                      <button
-                        id="copy-secret"
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          action(async () => {
-                            await navigator.clipboard.writeText(secret);
-                            setNotice('Key copied.');
-                          })
-                        }
-                      >
-                        Copy key
-                      </button>
-                      <button
-                        id="dismiss-secret"
-                        className="secondary-button"
-                        type="button"
-                        onClick={() => setSecret('')}
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                  </section>
-                )}
-              </section>
-            </section>
-          )}
-          {authenticated && view === 'sessions' && (
-            <section id="sessions" className="account-view">
-              <PageHeading title="Sessions">
-                Review your sign-ins and revoke access you no longer need.
-              </PageHeading>
-              <section
-                className="content-section"
-                aria-labelledby="session-list-heading"
-                aria-busy={collectionState === 'loading'}
-              >
-                <div className="collection-heading">
-                  <h2 id="session-list-heading">Your sessions</h2>
-                  <button
-                    id="revoke-all"
-                    className="secondary-button"
-                    type="button"
-                    disabled={
-                      busy ||
-                      collectionState !== 'ready' ||
-                      !sessions.some((session) => session.revoked_at === null)
-                    }
-                    onClick={() => {
-                      if (confirm('Revoke every session, including this one?'))
-                        action(async () => {
-                          await api('/api/sessions', 'DELETE');
-                          setMe(null);
-                          setSecret('');
-                        });
-                    }}
-                  >
-                    Revoke all sessions
-                  </button>
-                </div>
-                {collectionState === 'loading' ? (
-                  <LoadingState label="Loading sessions…" />
-                ) : collectionState === 'error' ? (
-                  <p className="collection-error">
-                    Sessions could not be loaded. <a href={prefix + '/sessions'}>Reload sessions</a>
-                  </p>
-                ) : sessions.length ? (
-                  <ul id="session-list" className="resource-list">
-                    {sessions.map((session) => (
-                      <ResourceRow
-                        key={session.id}
-                        title={session.id === me.session_id ? 'Current session' : 'Session'}
-                        action={
-                          <button
-                            className="secondary-button"
-                            type="button"
-                            aria-label={
-                              session.revoked_at !== null
-                                ? 'Session is revoked'
-                                : session.id === me.session_id
-                                  ? 'Revoke current session'
-                                  : `Revoke session created ${date(session.created_at)}`
-                            }
-                            disabled={busy || session.revoked_at !== null}
-                            onClick={() => {
-                              if (confirm('Revoke this session?'))
-                                action(async () => {
-                                  await api('/api/sessions/' + session.id, 'DELETE');
-                                  if (session.id === me.session_id) {
-                                    setMe(null);
-                                    setSecret('');
-                                  } else setSessions(await api('/api/sessions'));
-                                });
-                            }}
-                          >
-                            {session.revoked_at !== null ? 'Revoked' : 'Revoke'}
-                          </button>
-                        }
-                      >
-                        <span>Created {date(session.created_at)}</span>
-                        <span>Expires {date(session.expires_at)}</span>
-                      </ResourceRow>
-                    ))}
-                  </ul>
-                ) : (
-                  <EmptyState title="No sessions yet">
-                    Your sign-in sessions will appear here.
-                  </EmptyState>
-                )}
-              </section>
-            </section>
-          )}
-        </div>
-      </main>
-      <footer className="account-footer">Secured by Stargate</footer>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

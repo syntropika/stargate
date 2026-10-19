@@ -1,5 +1,6 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import Icon from '../../components/Icon.astro';
 ---
 <DocsLayout title="Getting started" description="Install Stargate and embed authentication in your existing Rust, Node, Python or Go application.">
   <h1>Authentication inside your app.</h1>
@@ -16,7 +17,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <h2>Mount the runtime</h2>
   <p>Provide the public HTTPS origin, embedded Turso database and your selected sign-in methods. For OIDC, register <code>https://app.example.com/auth/callback</code> with the provider, mount Stargate, then protect the routes that require an identity or scopes.</p>
   <p>The account panel is served under <code>/auth/</code>. Your application supplies the HTTP server, TLS and configuration; Stargate does not discover configuration files or environment variables.</p>
-  <p><a class="text-link" href="/docs/integrations/">Read the integration examples →</a></p>
+  <p><a class="text-link" href="/docs/integrations/">Read the integration examples <Icon name="arrow" /></a></p>
   <p>For email/password sign-in without an identity provider, follow the <a href="/docs/local-accounts/">local accounts guide</a>.</p>
   <h2>Understand the current scope</h2>
   <p>Stargate targets one process and one embedded database. Choose local accounts, OIDC, or both. With local accounts enabled, the first completed signup becomes the administrator and can manage users. Email verification, invitations, password recovery, MFA and distributed sessions remain future work.</p>

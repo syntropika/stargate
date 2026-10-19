@@ -1,281 +1,182 @@
-.landing {
-  --frame-padding: clamp(1.5rem, 5.55vw, 5.375rem);
-  --utility: system-ui, sans-serif;
-}
 .landing-frame {
-  max-width: 96rem;
-  margin-inline: auto;
-  padding-inline: var(--frame-padding);
-}
-.landing .site-header {
-  padding: 1.1875rem clamp(1.5rem, 4.7vw, 4.5rem);
-}
-.landing .brand-mark {
-  width: 2.75rem;
-  height: 2.75rem;
-}
-.landing .brand > span:last-child {
-  font-size: 1.5rem;
-  letter-spacing: 0.3em;
-}
-.landing .site-header nav a {
-  color: var(--body);
-  font-family: var(--utility);
-  font-size: 1rem;
-}
-.landing .site-header nav a:hover {
-  color: var(--accent);
+  padding-inline: 3.5rem;
 }
 .landing-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.11fr) minmax(0, 1fr);
-  align-items: start;
-  gap: 4rem;
-  padding-block: 4rem 3rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 2.25rem;
+  align-items: center;
+  min-height: 35.5rem;
+  padding-block: 3.875rem 4.1875rem;
 }
 .hero-copy h1 {
-  font: 400 clamp(3.25rem, 6.65vw, 6.375rem) / 0.94 var(--serif);
-  letter-spacing: -0.02em;
-  margin: 0 0 2.5rem;
+  font: 400 clamp(3.25rem, 5.7vw, 5.125rem)/0.99 var(--serif);
+  letter-spacing: -0.035em;
+  margin: 0;
+  text-wrap: balance;
 }
 .hero-copy > p {
-  font: 400 1.75rem / 1.4 var(--serif);
-  color: var(--body);
-  margin: 0;
+  font: 0.9375rem/1.65 var(--sans);
+  max-width: 30rem;
+  margin: 1.5625rem 0 2rem;
+  color: var(--muted);
 }
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2.75rem;
-  margin-top: 2.5rem;
-  font-size: 1rem;
-  font-family: var(--utility);
+  gap: 0.75rem;
+  font-size: 0.8125rem;
 }
-.primary-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 2.25rem;
-  min-width: 201px;
-  justify-content: space-between;
-  border-radius: 4px;
-  background: var(--accent);
-  color: var(--ground);
-  text-decoration: none;
-}
-.primary-link:hover {
-  background: var(--ink);
-  color: var(--ground);
-}
-.primary-link:active {
-  transform: translateY(1px);
-}
+.primary-link,
 .repository-link {
   display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  min-height: 44px;
-  color: var(--muted);
+  justify-content: center;
+  gap: 0.6875rem;
+  min-height: 2.75rem;
+  padding: 0.6875rem 1.0625rem;
+  border-radius: 2px;
   text-decoration: none;
 }
-.repository-link span {
-  border-bottom: 1px solid var(--line);
-}
-.runtime-diagram {
-  margin: 0;
-  min-width: 0;
-  container-type: inline-size;
-  font-size: 1rem;
-  font-family: var(--utility);
-}
-.diagram-languages {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.5rem;
-  padding-inline: 0.875rem;
-}
-.diagram-languages span {
-  display: grid;
-  place-items: center;
-  min-height: 3.25rem;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-}
-.diagram-connections {
-  position: relative;
-  height: 4.375rem;
-  margin-inline: 0.875rem;
-  color: var(--accent);
-}
-.route {
-  position: absolute;
-  top: 0;
-  height: 2.5rem;
-  border-bottom: 1px solid;
-}
-.route-rust,
-.route-node {
-  border-left: 1px solid;
-  border-bottom-left-radius: 3rem;
-}
-.route-python,
-.route-go {
-  border-right: 1px solid;
-  border-bottom-right-radius: 3rem;
-}
-.route-rust {
-  left: 10.5%;
-  width: 39.5%;
-}
-.route-node {
-  left: 37%;
-  width: 13%;
-}
-.route-python {
-  right: 37%;
-  width: 13%;
-}
-.route-go {
-  right: 10.5%;
-  width: 39.5%;
-}
-.runtime-stem {
-  position: absolute;
-  left: 50%;
-  top: 2.5rem;
-  height: 6.125rem;
-  border-left: 1px solid;
-  z-index: 1;
-}
-.runtime-stem::after {
-  content: '';
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  left: -4px;
-  bottom: 0;
-  border-bottom: 1px solid;
-  border-right: 1px solid;
-  transform: rotate(45deg);
-}
-.application-boundary {
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 1.25rem 2rem 0.875rem;
-}
-.application-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  font-size: 1.125rem;
-}
-.diagram-caption {
-  font: 400 1rem / 1.35 var(--serif);
-  color: var(--muted);
-}
-.runtime-boundary {
-  border: 1px dashed #887354;
-  border-radius: 7px;
-  padding: 1.5rem 0.875rem 0.875rem;
-}
-.runtime-identity {
-  display: flex;
-  align-items: center;
-  gap: 2.25rem;
-  min-height: 7.25rem;
-  padding-inline: 3.75rem 0.5rem;
-  padding-bottom: 1.25rem;
-}
-.runtime-mark {
-  width: 4rem;
-  height: 4rem;
-  flex: none;
-}
-.runtime-mark svg {
-  width: 100%;
-  height: 100%;
-}
-.runtime-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.25rem;
-  white-space: nowrap;
-}
-.runtime-title strong {
+.primary-link {
+  background: var(--ink);
+  color: var(--ground);
   font-weight: 500;
 }
-.runtime-features {
+.primary-link:hover {
+  color: var(--ground);
+  background: #d9d4c8;
+}
+.repository-link {
+  background: var(--surface);
+  color: var(--ink);
+}
+.repository-link:hover {
+  background: #2c2a21;
+}
+.hero-actions svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.primary-link:active,
+.repository-link:active {
+  transform: translateY(1px);
+}
+.ascii-portal {
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-width: 0;
   margin: 0;
-  color: var(--body);
-  font-size: 0.875rem;
-  font-family: var(--mono);
-  white-space: nowrap;
+  padding-bottom: 1.25rem;
 }
-.storage-boundary {
+.portal-artwork {
+  display: grid;
+  place-items: center;
+  width: min(100%, 26.875rem);
+  aspect-ratio: 1;
+}
+.portal-artwork canvas,
+.portal-artwork img {
+  grid-area: 1/1;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+.portal-fallback {
+  padding: 2.5rem;
+}
+.portal-caption {
+  position: absolute;
+  bottom: -0.625rem;
+  inset-inline: 0.75rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.25rem;
-  min-height: 4.25rem;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 0.75rem 1.25rem;
-  font-size: 1rem;
+  justify-content: center;
+  gap: 1.125rem;
+  color: var(--muted);
+  font: 0.625rem var(--mono);
 }
-.storage-boundary > svg {
-  width: 1.75rem;
-  height: 1.75rem;
-  color: var(--accent);
-  flex: none;
+.portal-caption > span {
+  text-transform: uppercase;
 }
-.storage-boundary .diagram-caption {
-  margin-left: auto;
+.portal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  padding: 0.4375rem 0.1875rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 0.6875rem var(--sans);
+  cursor: pointer;
+}
+.portal-toggle:hover {
+  color: var(--ink);
+}
+.portal-toggle svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.portal-toggle svg:not(.pause-symbol) {
+  display: none;
+}
+.portal-toggle[aria-pressed='true'] .pause-symbol {
+  display: none;
+}
+.portal-toggle[aria-pressed='true'] svg:not(.pause-symbol) {
+  display: block;
+}
+.landing [hidden] {
+  display: none !important;
 }
 .installation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   border-block: 1px solid var(--line);
-  padding-block: 2.25rem 0.25rem;
+}
+.installation-controls {
+  min-width: 0;
+  padding: 1.375rem 1.75rem 0.5rem;
+  border-right: 1px solid var(--line);
 }
 .install-tabs {
   display: flex;
-  gap: 1.25rem;
+  gap: 0.1875rem;
 }
 .install-tabs button {
-  background: transparent;
   border: 0;
   border-bottom: 1px solid transparent;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
   color: var(--muted);
-  font: 1.125rem / 1.5 var(--utility);
-  min-height: 44px;
-  padding: 0.5rem 0;
-  min-width: 94px;
-  text-align: left;
+  font: 0.75rem var(--sans);
   cursor: pointer;
 }
 .install-tabs button[aria-selected='true'] {
-  color: var(--ink);
+  background: #222117;
   border-color: var(--accent);
+  color: var(--ink);
 }
 .install-tabs button:hover {
   color: var(--ink);
 }
-.install-panel[hidden] {
-  display: none;
-}
 .install-command {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  min-height: 5.75rem;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 1.25rem 1.75rem;
-  background: #141210;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  margin-top: 0.625rem;
+  font: 0.75rem var(--mono);
 }
 .install-command code {
-  font: inherit;
-  overflow-wrap: anywhere;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .shell-prompt {
   color: var(--accent);
@@ -283,248 +184,342 @@
 .copy-command {
   display: grid;
   place-items: center;
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
   margin-left: auto;
   flex: none;
-  color: var(--muted);
-  border: none;
+  border: 0;
   background: transparent;
+  color: var(--muted);
   cursor: pointer;
 }
 .copy-command:hover {
-  color: var(--accent);
+  color: var(--ink);
+}
+.copy-command svg {
+  width: 1rem;
+  height: 1rem;
 }
 .copy-command:disabled {
+  opacity: 0.5;
   cursor: wait;
-  opacity: 0.6;
 }
 .install-command p {
   margin: 0;
+  font: 0.8125rem/1.6 var(--sans);
 }
 .install-command p a {
   display: inline-flex;
-  align-items: center;
   gap: 0.5rem;
+  align-items: center;
+}
+.install-command p svg {
+  width: 1rem;
+  height: 1rem;
 }
 .install-help {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  min-height: 2rem;
-  margin-top: 0.25rem;
-  font-size: 0.8125rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  font-size: 0.6875rem;
 }
 .install-help a {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  min-height: 2.75rem;
   text-decoration: none;
   color: var(--muted);
 }
 .install-help a:hover {
-  color: var(--accent);
+  color: var(--ink);
 }
 .install-help svg {
-  width: 1.125rem;
+  width: 0.875rem;
+  height: 0.875rem;
 }
 .copy-status {
   color: var(--accent);
 }
-.ownership {
-  padding-block: 3.25rem 5rem;
-}
-.ownership h2 {
-  font: 400 3.125rem / 1.15 var(--serif);
-  letter-spacing: -0.02em;
-  margin: 0 0 0.75rem;
-}
-.ownership-lead {
-  font: 400 1.625rem / 1.45 var(--serif);
-  color: var(--body);
-  margin: 0;
-}
-.ownership-details {
+.runtime-facts {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 5rem;
-  margin-block: 3rem 2rem;
-}
-.ownership-description {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
-  max-width: 36ch;
-  font: 400 1.75rem / 1.4 var(--serif);
-  color: var(--body);
+}
+.runtime-facts > div {
+  padding: 1.625rem 1.25rem;
+  border-right: 1px solid var(--line);
+}
+.runtime-facts > div:last-child {
+  border: 0;
+}
+.runtime-facts dt {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.125rem;
+}
+.runtime-facts dd {
+  font: 400 1.625rem/1.2 var(--serif);
+  margin: 0;
+  white-space: nowrap;
+}
+.ownership {
+  padding-block: 4.375rem;
+}
+.section-introduction {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 2.625rem;
+  margin-bottom: 2.4375rem;
+}
+.section-introduction h2,
+.integration-copy h2 {
+  font: 400 clamp(2.25rem, 3.5vw, 3.25rem)/1.1 var(--serif);
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+.section-introduction > p {
+  max-width: 25rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  margin: 0;
 }
 .capability-list {
-  margin: 0;
-  font-size: 0.875rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2.1875rem;
+  margin: 0 0 1.25rem;
 }
 .capability-list > div {
-  display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr);
-  gap: 1.5rem;
-  padding-block: 1.25rem;
+  padding-block: 1.4375rem;
   border-top: 1px solid var(--line);
 }
 .capability-list dt {
-  color: var(--ink);
+  font-size: 0.9375rem;
+  margin-bottom: 0.75rem;
 }
 .capability-list dd {
   margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.ownership .text-link,
+.integration-copy .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+.text-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+.integration-example {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  border-top: 1px solid var(--line);
+}
+.integration-copy {
+  border-right: 1px solid var(--line);
+  padding: 2.625rem;
+}
+.integration-copy p {
+  font-size: 0.875rem;
+  color: var(--muted);
+  max-width: 20rem;
+  margin: 1.125rem 0 1.75rem;
+}
+.code-window {
+  min-width: 0;
+  margin: 2.625rem;
+  border: 1px solid var(--line);
+  background: #10100c;
+}
+.example-tabs {
+  display: flex;
+  gap: 0.1875rem;
+  padding-inline: 0.375rem;
+  border-bottom: 1px solid var(--line);
+}
+.example-tabs button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--muted);
+  font: 0.75rem var(--sans);
+  cursor: pointer;
+}
+.example-tabs button[aria-selected='true'] {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+.example-tabs button:hover {
+  color: var(--ink);
+}
+.example-panels {
+  display: grid;
+}
+.code-panel {
+  grid-area: 1 / 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Hidden examples still set the shared height so switching languages cannot move the page. */
+.landing .code-panel[hidden] {
+  display: flex !important;
+  visibility: hidden;
+}
+.code-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.125rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.6875rem;
   color: var(--muted);
 }
-.ownership .text-link {
-  gap: 1rem;
-  font-size: 0.875rem;
+.code-title > span:last-child {
+  font-family: var(--mono);
 }
-@container (max-width: 36rem) {
-  .runtime-identity {
-    padding-inline: 0.5rem;
-    gap: 1rem;
+.code-window pre {
+  margin: 0;
+  padding: 1.625rem;
+  color: #ded9cb;
+  font: 0.75rem/1.9 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.code-footer {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1.125rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.625rem;
+}
+.code-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  text-decoration: none;
+}
+.code-footer svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+@media (max-width: 68.75rem) {
+  .landing-frame {
+    padding-inline: 2.25rem;
   }
-  .runtime-title {
-    font-size: 1rem;
+  .landing-hero {
+    min-height: 32rem;
+    gap: 1.5rem;
   }
-  .runtime-features {
-    white-space: normal;
-    font-size: 0.75rem;
+  .hero-copy h1 {
+    font-size: clamp(3.25rem, 5.8vw, 4.5rem);
   }
-  .application-heading {
-    align-items: start;
-  }
-  .application-heading .diagram-caption {
-    max-width: 11rem;
-    text-align: right;
-  }
-  .storage-boundary {
+  .runtime-facts > div {
     padding-inline: 0.75rem;
-    flex-wrap: wrap;
-    gap: 0.5rem 0.75rem;
   }
-  .storage-boundary .diagram-caption {
-    font-size: 0.875rem;
+  .runtime-facts dd {
+    font-size: 1.375rem;
   }
-}
-@media (max-width: 72rem) {
-  .landing-hero {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 3rem;
-  }
-  .hero-copy h1 {
-    font-size: clamp(3.25rem, 8.3vw, 6rem);
-  }
-  .runtime-diagram {
-    width: 100%;
-    max-width: 44rem;
-  }
-  .ownership-details {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2rem;
-  }
-  .ownership-description {
-    max-width: 60ch;
+  .code-window {
+    margin: 1.75rem;
   }
 }
-@media (max-width: 45rem) {
-  .landing .brand > span:last-child {
-    font-size: 1.125rem;
-    letter-spacing: 0.25em;
-  }
-  .landing .site-header {
-    padding-inline: 1.5rem;
+@media (max-width: 47.5rem) {
+  .landing-frame {
+    padding-inline: 1.5625rem;
   }
   .landing-hero {
-    padding-block: 2.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    gap: 0.625rem;
+    padding-block: 2.9375rem 1.9375rem;
   }
   .hero-copy h1 {
-    margin-bottom: 1.5rem;
+    font-size: clamp(3rem, 16vw, 3.9375rem);
   }
   .hero-copy > p {
-    font-size: 1.5rem;
-  }
-  .hero-actions {
-    gap: 1rem;
-    margin-top: 1.5rem;
-  }
-  .primary-link {
-    padding-inline: 1.25rem;
-    min-width: 0;
-  }
-  .repository-link {
-    gap: 0.5rem;
     font-size: 0.875rem;
+    margin-block: 1.4375rem;
   }
-  .diagram-languages {
+  .ascii-portal {
+    min-height: 17.5rem;
+    max-height: 19rem;
+  }
+  .portal-artwork {
+    max-width: 16.875rem;
+  }
+  .portal-caption {
     gap: 0.5rem;
-    padding-inline: 0;
-    font-size: 0.8125rem;
+    bottom: -0.75rem;
   }
-  .diagram-connections {
-    margin-inline: 0;
+  .portal-caption > span {
+    font-size: 0.5rem;
   }
-  .application-boundary {
-    padding-inline: 0.875rem;
-  }
-  .application-heading {
-    font-size: 0.8125rem;
-  }
-  .application-heading .diagram-caption {
-    font-size: 0.875rem;
-    max-width: 9rem;
-  }
-  .runtime-mark {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-  .runtime-title {
-    white-space: normal;
-  }
-  .runtime-identity {
-    padding-inline: 0;
-    min-height: 7.5rem;
-    padding-bottom: 0;
-  }
-  .runtime-boundary {
-    padding-top: 1rem;
-  }
-  .storage-boundary .diagram-caption {
-    margin-left: 2.5rem;
+  .portal-toggle {
+    font-size: 0.625rem;
   }
   .installation {
-    padding-block: 1.5rem 1rem;
+    grid-template-columns: minmax(0, 1fr);
   }
-  .install-tabs {
-    gap: 0.5rem;
-    justify-content: space-between;
+  .installation-controls {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding-inline: 1.4375rem;
   }
-  .install-tabs button {
-    min-width: 0;
-    font-size: 1rem;
-    padding-inline: 0.625rem;
+  .runtime-facts > div {
+    padding: 1.25rem 0.625rem;
   }
-  .install-command {
-    padding-inline: 1rem;
-    gap: 0.75rem;
-    font-size: 0.875rem;
+  .runtime-facts dt {
+    font-size: 0.5625rem;
+    margin-bottom: 0.6875rem;
+  }
+  .runtime-facts dd {
+    font-size: clamp(1.125rem, 4.5vw, 1.5rem);
   }
   .ownership {
-    padding-block: 2.5rem 3.5rem;
+    padding-block: 2.6875rem;
   }
-  .ownership h2 {
-    font-size: 2.5rem;
+  .section-introduction {
+    display: block;
+    margin-bottom: 1.6875rem;
   }
-  .ownership-lead {
-    font-size: 1.5rem;
+  .section-introduction > p {
+    max-width: none;
+    margin-top: 1.25rem;
   }
-  .ownership-description {
-    font-size: 1.5rem;
-  }
-  .capability-list > div {
+  .capability-list {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.5rem;
+    gap: 0;
+  }
+  .integration-example {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .integration-copy {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 1.875rem 1.5625rem;
+  }
+  .code-window {
+    margin: 1.5625rem;
   }
 }
