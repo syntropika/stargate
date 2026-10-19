@@ -29,10 +29,10 @@ type Key = {
 type Session = { id: string; created_at: number; expires_at: number; revoked_at: number | null };
 
 const date = (value: number) => new Date(value * 1000).toLocaleString();
-const keyStatus = (key: Key) =>
+const keyStatus = (key: Key, now: number) =>
   key.revoked_at !== null
     ? 'Revoked'
-    : key.expires_at !== null && key.expires_at * 1000 <= Date.now()
+    : key.expires_at !== null && key.expires_at * 1000 <= now
       ? 'Expired'
       : 'Active';
 type LoadState = 'loading' | 'ready' | 'error';
@@ -128,6 +128,7 @@ export function App({ prefix, name, logo, providers, page, local = false }: Prop
   const [me, setMe] = useState<Me | null>(null);
   const [notice, setNotice] = useState('');
   const [keys, setKeys] = useState<Key[]>([]);
+  const [now, setNow] = useState(Date.now);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [secret, setSecret] = useState('');
   const [busy, setBusy] = useState(false);
@@ -140,9 +141,9 @@ export function App({ prefix, name, logo, providers, page, local = false }: Prop
   const createFormRef = useRef<HTMLFormElement>(null);
   const administrator = me?.identity.claims?.stargate?.role === 'administrator';
   const view = ['profile', 'keys', 'sessions', 'users'].includes(page) ? page : 'profile';
-  const activeKeys = keys.filter((key) => keyStatus(key) === 'Active');
+  const activeKeys = keys.filter((key) => keyStatus(key, now) === 'Active');
   const filteredKeys = keys.filter((key) => {
-    if (keyFilter === 'active' && keyStatus(key) !== 'Active') return false;
+    if (keyFilter === 'active' && keyStatus(key, now) !== 'Active') return false;
     if (keyFilter === 'revoked' && key.revoked_at === null) return false;
     return [key.name, key.prefix, ...key.scopes]
       .join(' ')
@@ -153,6 +154,32 @@ export function App({ prefix, name, logo, providers, page, local = false }: Prop
   useEffect(() => {
     if (showCreateKey) createFormRef.current?.querySelector('input')?.focus();
   }, [showCreateKey]);
+
+  useEffect(() => {
+    if (view !== 'keys') return;
+    const refresh = () => setNow(Date.now());
+    const nextExpiration = keys.reduce((next, key) => {
+      const expiration = key.expires_at === null ? Infinity : key.expires_at * 1000;
+      return key.revoked_at === null && expiration > now ? Math.min(next, expiration) : next;
+    }, Infinity);
+    // Browser timeout delays must fit a signed 32-bit integer.
+    const timer = Number.isFinite(nextExpiration)
+      ? window.setTimeout(
+          refresh,
+          Math.min(Math.max(0, nextExpiration - Date.now()), 2_147_483_647),
+        )
+      : undefined;
+    const onVisibilityChange = () => {
+      if (!document.hidden) refresh();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [keys, now, view]);
 
   const api = useCallback(
     async (path: string, method = 'GET', body?: unknown) => {
@@ -567,9 +594,9 @@ export function App({ prefix, name, logo, providers, page, local = false }: Prop
                             <td>
                               <span className="mobile-label">Status</span>
                               <span
-                                className={`key-status ${keyStatus(key) === 'Active' ? 'active' : ''}`}
+                                className={`key-status ${keyStatus(key, now) === 'Active' ? 'active' : ''}`}
                               >
-                                {keyStatus(key)}
+                                {keyStatus(key, now)}
                               </span>
                             </td>
                             <td className="register-action">
